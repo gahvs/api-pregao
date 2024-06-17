@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database.instance import get_db
 from utils.error_functions import not_found_message
+import logic.user as user_logic
 import logic.pregao as logic
 import schemas.pregao as schemas 
 
@@ -63,6 +64,9 @@ def set_participants(pregao_id: int, pregao_data: schemas.PregaoParticipantsSche
     if pregao is None:
         raise HTTPException(status_code=404, detail=not_found_message("PREGAO", pregao_id))
 
+    for user_id in pregao_data.demandantes:
+        if user_logic.get_user(db, user_id) is None:
+            raise HTTPException(status_code=404, detail=not_found_message("USUARIO", user_id))
 
     participants = logic.create_pregao_participants(db, pregao_id=pregao_id, participants=pregao_data.demandantes)
 
