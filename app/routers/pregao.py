@@ -68,10 +68,33 @@ def set_demandantes(pregao_id: int, pregao_data: schemas.PregaoDemandantesSchema
         if user_logic.get_user(db, user_id) is None:
             raise HTTPException(status_code=404, detail=not_found_message("USUARIO", user_id))
 
-    participants = logic.create_pregao_demandantes(db, pregao_id=pregao_id, demandantes=pregao_data.demandantes)
+    demandantes = logic.create_pregao_demandantes(db, pregao_id=pregao_id, demandantes=pregao_data.demandantes)
 
     pregao_dict = schemas.PregaoSchema.model_validate(pregao).model_dump()
-    pregao_dict['demandantes'] = list(map(lambda participants: participants.demandanteID, participants))
+    pregao_dict['demandantes'] = list(map(lambda demandante: demandante.demandanteID, demandantes))
     pregao_schema = schemas.PregaoDemandantesResponseSchema(**pregao_dict)
 
     return pregao_schema
+
+@router.post("/{pregao_id}/fornecedores", response_model=schemas.PregaoFornecedoresResponseSchema)
+def set_fornecedores(pregao_id: int, pregao_data: schemas.PregaoFornecedoresSchema, db: Session = Depends(get_db)):
+    pregao = logic.get_pregao(db, pregao_id)
+
+    if pregao is None:
+        raise HTTPException(status_code=404, detail=not_found_message("PREGAO", pregao_id))
+
+    for user_id in pregao_data.fornecedores:
+        if user_logic.get_user(db, user_id) is None:
+            raise HTTPException(status_code=404, detail=not_found_message("USUARIO", user_id))
+        
+    fornecedores = logic.create_pregao_fornecedores(db, pregao_id, pregao_data.fornecedores)
+    
+    pregao_dict = schemas.PregaoSchema.model_validate(pregao).model_dump()
+    pregao_dict['fornecedores'] = list(map(lambda fornecedor: fornecedor.fornecedorID, fornecedores))
+    pregao_schema = schemas.PregaoFornecedoresResponseSchema(**pregao_dict)
+
+    return pregao_schema
+
+# TODO:
+# mover validações dos routers para logic
+# adicionar verificacao demandante nao pode estar como fornecedor do pregao e vice-versa

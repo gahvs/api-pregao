@@ -87,12 +87,12 @@ def get_fornecedor(db: Session, pregao_id: int, fornecedor_id: int) -> PregaoFor
 def fornecedor_is_in_pregao(db: Session, pregao_id: int, fornecedor_id: int) -> bool:
     query = db.query(PregaoFornecedoresModel).filter(
             PregaoFornecedoresModel.pregaoID == pregao_id,
-            PregaoFornecedoresModel.fornecedor_id == fornecedor_id
+            PregaoFornecedoresModel.fornecedorID == fornecedor_id
     )
 
     return db.query(query.exists()).scalar()
 
-def create_pregao_participants(db: Session, pregao_id: int, fornecedores: List[int]) -> List[PregaoFornecedoresModel]:
+def create_pregao_fornecedores(db: Session, pregao_id: int, fornecedores: List[int]) -> List[PregaoFornecedoresModel]:
 
     fornecedor_models = []
 

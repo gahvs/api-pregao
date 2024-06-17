@@ -62,3 +62,26 @@ class PregaoDemandantesResponseSchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
+class PregaoFornecedoresSchema(BaseModel):
+    
+    fornecedores: List[int]
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+class PregaoFornecedoresResponseSchema(BaseModel):
+    
+    id: int
+    descricao: str
+    status: str
+    criadoPor: int
+    criadoEm: datetime
+    dataHoraInicio: datetime
+    dataHoraFim: datetime
+    fornecedores: List[int]
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
