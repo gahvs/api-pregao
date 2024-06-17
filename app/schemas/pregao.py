@@ -1,5 +1,6 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
+from typing import List, Optional
 from utils import error_functions
 
 class PregaoSchema(BaseModel):
@@ -37,4 +38,27 @@ class PregaoCreateSchema(BaseModel):
             
         else:
             raise ValueError(error_functions.invalid_type(resource_name="dataHoraInicio | dataHoraFim",expected_type="String",received_type=type(value)))
-        
+
+
+class PregaoParticipantsSchema(BaseModel):
+    
+    demandantes: List[int]
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+class PregaoParticipantsResponseSchema(BaseModel):
+    
+    id: int
+    descricao: str
+    status: str
+    criadoPor: int
+    criadoEm: datetime
+    dataHoraInicio: datetime
+    dataHoraFim: datetime
+    demandantes: List[int]
+
+    class Config:
+        orm_mode = True
+        from_attributes = True

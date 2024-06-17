@@ -13,3 +13,11 @@ class PregaoModel(Base):
     criadoEm = Column(DateTime, default=datetime.now().isoformat())
     dataHoraInicio = Column(DateTime)
     dataHoraFim = Column(DateTime)
+
+class PregaoParticipantsModel(Base):
+
+    __tablename__  = "PREGAO_DEMANDANTES"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    pregaoID = Column(BigInteger)
+    demandanteID = Column(BigInteger)
