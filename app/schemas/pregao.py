@@ -40,7 +40,7 @@ class PregaoCreateSchema(BaseModel):
             raise ValueError(error_functions.invalid_type(resource_name="dataHoraInicio | dataHoraFim",expected_type="String",received_type=type(value)))
 
 
-class PregaoParticipantsSchema(BaseModel):
+class PregaoDemandantesSchema(BaseModel):
     
     demandantes: List[int]
 
@@ -48,7 +48,7 @@ class PregaoParticipantsSchema(BaseModel):
         orm_mode = True
         from_attributes = True
 
-class PregaoParticipantsResponseSchema(BaseModel):
+class PregaoDemandantesResponseSchema(BaseModel):
     
     id: int
     descricao: str

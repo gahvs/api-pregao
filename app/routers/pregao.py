@@ -57,8 +57,8 @@ def reject_pregao(pregao_id: int, db: Session = Depends(get_db)):
     
     return schemas.PregaoSchema.model_validate(pregao)
 
-@router.post("/{pregao_id}/participants", response_model=schemas.PregaoParticipantsResponseSchema)
-def set_participants(pregao_id: int, pregao_data: schemas.PregaoParticipantsSchema, db: Session = Depends(get_db)):
+@router.post("/{pregao_id}/demandantes", response_model=schemas.PregaoDemandantesResponseSchema)
+def set_demandantes(pregao_id: int, pregao_data: schemas.PregaoDemandantesSchema, db: Session = Depends(get_db)):
     
     pregao = logic.get_pregao(db, pregao_id)
     if pregao is None:
@@ -68,10 +68,10 @@ def set_participants(pregao_id: int, pregao_data: schemas.PregaoParticipantsSche
         if user_logic.get_user(db, user_id) is None:
             raise HTTPException(status_code=404, detail=not_found_message("USUARIO", user_id))
 
-    participants = logic.create_pregao_participants(db, pregao_id=pregao_id, participants=pregao_data.demandantes)
+    participants = logic.create_pregao_demandantes(db, pregao_id=pregao_id, demandantes=pregao_data.demandantes)
 
     pregao_dict = schemas.PregaoSchema.model_validate(pregao).model_dump()
     pregao_dict['demandantes'] = list(map(lambda participants: participants.demandanteID, participants))
-    pregao_schema = schemas.PregaoParticipantsResponseSchema(**pregao_dict)
+    pregao_schema = schemas.PregaoDemandantesResponseSchema(**pregao_dict)
 
     return pregao_schema
