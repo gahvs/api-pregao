@@ -14,6 +14,15 @@ class PregaoModel(Base):
     dataHoraInicio = Column(DateTime)
     dataHoraFim = Column(DateTime)
 
+class PregaoParticipantesModel(Base):
+
+    __tablename__ = "PREGAO_PARTICIPANTES"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    pregaoID = Column(BigInteger)
+    usuarioID = Column(BigInteger)
+    tipoParticipante = Column(String)
+
 class PregaoDemandantesModel(Base):
 
     __tablename__  = "PREGAO_DEMANDANTES"

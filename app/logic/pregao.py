@@ -1,11 +1,16 @@
 from typing import List
 from sqlalchemy.orm import Session
-from models.pregao import PregaoModel, PregaoDemandantesModel, PregaoFornecedoresModel
+from models.pregao import PregaoModel, PregaoDemandantesModel, PregaoFornecedoresModel, PregaoParticipantesModel
 from schemas.pregao import PregaoSchema, PregaoCreateSchema
 
+# PREGAO CONSTS
 PREGAO_CANCELED_STATUS = 'CANCELADO'
 PREGAO_AUTHORIZED_STATUS = 'AUTORIZADO'
 PREGAO_REJECTED_STATUS = 'REJEITADO'
+# PREGAO_PARTICIPANTES CONSTS
+TIPO_PARTICIPANTE_FORNECEDOR = 'FORNECEDOR'
+TIPO_PARTICIPANTE_DEMANDANTE = 'DEMANDANTE'
+
 
 # PREGAO LOGIC
 
@@ -45,65 +50,37 @@ def set_pregao_as_rejected(db: Session, pregao_id: int) -> PregaoModel:
 def set_pregao_as_authorized(db: Session, pregao_id: int) -> PregaoModel:
     return update_pregao_status(db, pregao_id=pregao_id, new_status=PREGAO_AUTHORIZED_STATUS)
 
-# PREGAO_DEMANDANTES LOGIC
-def get_demandante(db: Session, pregao_id: int, demandante_id: int) ->PregaoDemandantesModel:
-    return db.query(PregaoDemandantesModel).filter(
-            PregaoDemandantesModel.pregaoID == pregao_id,
-            PregaoDemandantesModel.demandanteID == demandante_id
+# PREGAO_PARTICIPANTES LOGIC
+
+def get_participante(db: Session, pregao_id: int, usuario_id: int) -> PregaoParticipantesModel:
+    return db.query(PregaoParticipantesModel).filter(
+        PregaoParticipantesModel.pregaoID == pregao_id,
+        PregaoParticipantesModel.usuarioID == usuario_id
     ).first()
 
-def demandante_is_in_pregao(db: Session, pregao_id: int, demandante_id: int) -> bool:
-    query = db.query(PregaoDemandantesModel).filter(
-            PregaoDemandantesModel.pregaoID == pregao_id,
-            PregaoDemandantesModel.demandanteID == demandante_id
+def participante_is_in_pregao(db: Session, pregao_id: int, usuario_id: int) -> bool:
+    query = db.query(PregaoParticipantesModel).filter(
+        PregaoParticipantesModel.pregaoID == pregao_id,
+        PregaoParticipantesModel.usuarioID == usuario_id
     )
 
     return db.query(query.exists()).scalar()
 
-def create_pregao_demandantes(db: Session, pregao_id: int, demandantes: List[int]) -> List[PregaoDemandantesModel]:
+def create_pregao_participante(db: Session, pregao_id: int, usuario_id: int, tipo_participante: str) -> PregaoParticipantesModel:
 
-    demandante_models = []
+    if participante_is_in_pregao(db, pregao_id, usuario_id):
+        return get_participante(db, pregao_id, usuario_id)
 
-    for demandante_id in demandantes:
-        if not demandante_is_in_pregao(db, pregao_id, demandante_id):
-            demandante = PregaoDemandantesModel(pregaoID=pregao_id, demandanteID=demandante_id)
-            db.add(demandante)
-            db.commit()
-            db.refresh(demandante)
-            demandante_models.append(demandante)
-        else:
-            demandante_models.append(get_demandante(db, pregao_id, demandante_id))
-    
-    return demandante_models
+    participante = PregaoParticipantesModel(pregaoID=pregao_id, usuarioID=usuario_id, tipoParticipante=tipo_participante)
 
+    db.add(participante)
+    db.commit()
+    db.refresh(participante)
 
-# PREGAO_FORNECEDORES LOGIC
-def get_fornecedor(db: Session, pregao_id: int, fornecedor_id: int) -> PregaoFornecedoresModel:
-    return db.query(PregaoFornecedoresModel).filter(
-            PregaoFornecedoresModel.pregaoID == pregao_id,
-            PregaoFornecedoresModel.fornecedorID == fornecedor_id
-    ).first()
+    return participante
 
-def fornecedor_is_in_pregao(db: Session, pregao_id: int, fornecedor_id: int) -> bool:
-    query = db.query(PregaoFornecedoresModel).filter(
-            PregaoFornecedoresModel.pregaoID == pregao_id,
-            PregaoFornecedoresModel.fornecedorID == fornecedor_id
-    )
+def create_pregao_fornecedor(db: Session, pregao_id: int, usuario_id: int) -> PregaoParticipantesModel:
+    return create_pregao_participante(db, pregao_id, usuario_id, TIPO_PARTICIPANTE_FORNECEDOR)
 
-    return db.query(query.exists()).scalar()
-
-def create_pregao_fornecedores(db: Session, pregao_id: int, fornecedores: List[int]) -> List[PregaoFornecedoresModel]:
-
-    fornecedor_models = []
-
-    for fornecedor_id in fornecedores:
-        if not fornecedor_is_in_pregao(db, pregao_id, fornecedor_id):
-            fornecedor = PregaoFornecedoresModel(pregaoID=pregao_id, fornecedorID=fornecedor_id)
-            db.add(fornecedor)
-            db.commit()
-            db.refresh(fornecedor)
-            fornecedor_models.append(fornecedor)
-        else:
-            fornecedor_models.append(get_fornecedor(db, pregao_id, fornecedor_id))
-    
-    return fornecedor_models
+def create_pregao_demandante(db: Session, pregao_id: int, usuario_id: int) -> PregaoParticipantesModel:
+    return create_pregao_participante(db, pregao_id, usuario_id, TIPO_PARTICIPANTE_DEMANDANTE)

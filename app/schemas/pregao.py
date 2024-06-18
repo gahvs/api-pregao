@@ -85,3 +85,23 @@ class PregaoFornecedoresResponseSchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
+
+class PregaParticipanteSchema(BaseModel):
+    
+    usuarioId: int
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+class PregaoParticipantesResponseSchema(BaseModel):
+    
+    id: int
+    pregaoID: int
+    usuarioID: int
+    tipoParticipante: str
+
+    class Config:
+        orm_mode = True
+        from_attributes = True        

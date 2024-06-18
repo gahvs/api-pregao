@@ -8,4 +8,3 @@ class UserModel(Base):
     id = Column(BigInteger, primary_key=True, index=True)
     email = Column(String)
     nome = Column(String)
-    tipoUsuario = Column(String)
