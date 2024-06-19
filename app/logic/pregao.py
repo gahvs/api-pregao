@@ -1,88 +1,190 @@
-from typing import List
+from fastapi import Depends, HTTPException
+from database.instance import get_db
 from sqlalchemy.orm import Session
 from models import pregao as models
 from schemas import pregao as schemas
+from utils import errors
+from typing import Union
+from . import validations
 
 
-# PREGAO CONSTS
-PREGAO_CANCELED_STATUS = 'CANCELADO'
-PREGAO_AUTHORIZED_STATUS = 'AUTORIZADO'
-PREGAO_REJECTED_STATUS = 'REJEITADO'
-
-# PREGAO_PARTICIPANTES CONSTS
-TIPO_PARTICIPANTE_FORNECEDOR = 'FORNECEDOR'
-TIPO_PARTICIPANTE_DEMANDANTE = 'DEMANDANTE'
+class PregaoLogic:
+    '''
+        Realiza ações que tem como contexto a tabela PREGAO
+    '''
 
 
-# PREGAO LOGIC
+    PREGAO_CANCELED_STATUS = 'CANCELADO'
+    PREGAO_AUTHORIZED_STATUS = 'AUTORIZADO'
+    PREGAO_REJECTED_STATUS = 'REJEITADO'
 
-def get_pregao(db: Session, pregao_id: int) -> models.PregaoModel:
-    return db.query(models.PregaoModel).filter(models.PregaoModel.id == pregao_id).first()
 
-def create_pregao(db: Session, pregao_data: schemas.PregaoCreateSchema) -> models.PregaoModel:
+    def __init__(self, db: Session = Depends(get_db)) -> None:
+        self.db: Session = db
 
-    pregao = models.PregaoModel(**pregao_data.model_dump())
 
-    db.add(pregao)
-    db.commit()
-    db.refresh(pregao)
+    def get_pregao_by_id(self, pregao_id: int) -> models.PregaoModel | HTTPException:
+        pregao = self.db.query(models.PregaoModel).filter(models.PregaoModel.id == pregao_id).first()
+        
+        if pregao is None:
+            raise HTTPException(status_code=404, detail=errors.not_found_message("PREGAO", pregao_id))
+        
+        return pregao
+        
+
+    def create_pregao(self, body: schemas.PregaoCreateSchema) -> models.PregaoModel:
+        pregao = models.PregaoModel(
+            descricao=body.descricao,
+            criadoPor=body.usuarioID,
+            dataHoraInicio=body.dataHoraInicio,
+            dataHoraFim=body.dataHoraFim
+        )
+
+        self.db.add(pregao)
+        self.db.commit()
+        self.db.refresh(pregao)
+
+        return pregao
     
-    return pregao
 
-def update_pregao_status(db: Session, pregao_id: int, new_status: str) -> models.PregaoModel:
-    pregao = get_pregao(db, pregao_id)
+    def change_pregao_status(self, pregao_id: int, new_status: str) -> models.PregaoModel:
+        pregao = self.get_pregao_by_id(pregao_id=pregao_id)
+        pregao.status = new_status
+        
+        self.db.add(pregao)
+        self.db.commit()
+        self.db.refresh(pregao)
 
-    if pregao is None:
-        return None
+        return pregao
+
+
+    def cancel_pregao(self, pregao_id: int) -> models.PregaoModel:
+        return self.change_pregao_status(pregao_id=pregao_id, new_status=self.PREGAO_CANCELED_STATUS)
+
+
+    def reject_pregao(self, pregao_id: int) -> models.PregaoModel:
+        return self.change_pregao_status(pregao_id=pregao_id, new_status=self.PREGAO_REJECTED_STATUS)
+
+
+    def authorize_pregao(self, pregao_id: int) -> models.PregaoModel:
+        return self.change_pregao_status(pregao_id=pregao_id, new_status=self.PREGAO_AUTHORIZED_STATUS)        
+
+
+class PregaoParticipanteLogic:
+    '''
+        Realiza ações que tem como contexto a tabela PREGAO_PARTICIPANTES
+    '''
+        
+
+    TIPO_PARTICIPANTE_FORNECEDOR = 'FORNECEDOR'
+    TIPO_PARTICIPANTE_DEMANDANTE = 'DEMANDANTE'        
+
+
+    def __init__(self, db: Session = Depends(get_db), pregao_logic: PregaoLogic = Depends(PregaoLogic)) -> None:
+        self.db: Session = db
+        self.pregao_logic = pregao_logic
+
+
+    def validate(self, pregao_id: int, user_id: int) -> HTTPException | None:
+        if not validations.UserValidation.user_exists(db=self.db, user_id=user_id):
+            raise HTTPException(status_code=404, detail=errors.not_found_message("USUARIO", user_id))
+        
+        _ = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
+
+
+    def get_participante_by_pregao_usuario(self, pregao_id: int, usuario_id: int) -> models.PregaoParticipantesModel:
+        return self.db.query(models.PregaoParticipantesModel).filter(
+            models.PregaoParticipantesModel.pregaoID == pregao_id,
+            models.PregaoParticipantesModel.usuarioID == usuario_id
+        ).first()
+
+
+    def participante_isin_pregao(self, pregao_id:int, usuario_id: int) -> bool:
+        query = self.db.query(models.PregaoParticipantesModel).filter(
+            models.PregaoParticipantesModel.pregaoID == pregao_id,
+            models.PregaoParticipantesModel.usuarioID == usuario_id
+        )
+
+        return self.db.query(query.exists()).scalar()        
     
-    pregao.status = new_status
 
-    db.add(pregao)
-    db.commit()
-    db.refresh
+    def create_participante(self, body: schemas.PregaoParticipantesResponseSchema, pregao_id: int, tipoParticipante: str) -> models.PregaoParticipantesModel:
+        participante = models.PregaoParticipantesModel(
+            pregaoID=pregao_id, 
+            usuarioID=body.usuarioID,
+            tipoParticipante=tipoParticipante
+        )
 
-    return pregao
+        self.db.add(participante)
+        self.db.commit()
+        self.db.refresh(participante)
 
-def set_pregao_as_canceled(db: Session, pregao_id: int) -> models.PregaoModel:
-    return update_pregao_status(db, pregao_id=pregao_id, new_status=PREGAO_CANCELED_STATUS)
+        return participante
+    
+    
+    def create_fornecedor(self, body: schemas.PregaoParticipanteSchema, pregao_id: int) -> models.PregaoParticipantesModel:    
+        self.validate(pregao_id, body.usuarioID)
 
-def set_pregao_as_rejected(db: Session, pregao_id: int) -> models.PregaoModel:
-    return update_pregao_status(db, pregao_id=pregao_id, new_status=PREGAO_REJECTED_STATUS)
+        if self.participante_isin_pregao(pregao_id=pregao_id, usuario_id=body.usuarioID):
+            return self.get_participante_by_pregao_usuario(pregao_id=pregao_id, usuario_id=body.usuarioID)
+        
+        return self.create_participante(body=body, pregao_id=pregao_id, tipoParticipante=self.TIPO_PARTICIPANTE_FORNECEDOR)
 
-def set_pregao_as_authorized(db: Session, pregao_id: int) -> models.PregaoModel:
-    return update_pregao_status(db, pregao_id=pregao_id, new_status=PREGAO_AUTHORIZED_STATUS)
 
-# PREGAO_PARTICIPANTES LOGIC
+    def create_demandante(self, body: schemas.PregaoParticipanteSchema, pregao_id: int) -> models.PregaoParticipantesModel:
+        self.validate(pregao_id, body.usuarioID)
 
-def get_participante(db: Session, pregao_id: int, usuario_id: int) -> models.PregaoParticipantesModel:
-    return db.query(models.PregaoParticipantesModel).filter(
-        models.PregaoParticipantesModel.pregaoID == pregao_id,
-        models.PregaoParticipantesModel.usuarioID == usuario_id
-    ).first()
+        if self.participante_isin_pregao(pregao_id=pregao_id, usuario_id=body.usuarioID):
+            return self.get_participante_by_pregao_usuario(pregao_id=pregao_id, usuario_id=body.usuarioID)
+        
+        return self.create_participante(body=body, pregao_id=pregao_id, tipoParticipante=self.TIPO_PARTICIPANTE_DEMANDANTE)    
 
-def participante_is_in_pregao(db: Session, pregao_id: int, usuario_id: int) -> bool:
-    query = db.query(models.PregaoParticipantesModel).filter(
-        models.PregaoParticipantesModel.pregaoID == pregao_id,
-        models.PregaoParticipantesModel.usuarioID == usuario_id
-    )
 
-    return db.query(query.exists()).scalar()
+class PregaoDemandasLogic:
+    '''
+        Realiza ações que tem como contexto a tabela PREGAO_DEMANDAS e PREGAO_PRODUTOS
+    '''
+        
+    def __init__(self, db: Session = Depends(get_db), pregao_logic: PregaoLogic = Depends(PregaoLogic)) -> None:
+        self.db: Session = db
+        self.pregao_logic = pregao_logic
 
-def create_pregao_participante(db: Session, pregao_id: int, usuario_id: int, tipo_participante: str) -> models.PregaoParticipantesModel:
+    def __validate(self, pregao_id: int, user_id: int) -> HTTPException | None:
+        if not validations.UserValidation.user_exists(db=self.db, user_id=user_id):
+            raise HTTPException(status_code=404, detail=errors.not_found_message("USUARIO", user_id))
+        
+        _ = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
 
-    if participante_is_in_pregao(db, pregao_id, usuario_id):
-        return get_participante(db, pregao_id, usuario_id)
+    def __create_produto(self,  body: schemas.PregaoDemandaSchema) -> models.PregaoProdutosModel:
+        produto = models.PregaoProdutosModel(demandanteID=body.usuarioID, descricao=body.descricao, unidade=body.unidade)
 
-    participante = models.PregaoParticipantesModel(pregaoID=pregao_id, usuarioID=usuario_id, tipoParticipante=tipo_participante)
+        self.db.add(produto)
+        self.db.commit()
+        self.db.refresh(produto)
 
-    db.add(participante)
-    db.commit()
-    db.refresh(participante)
+        return produto
+    
 
-    return participante
+    def __create_demanda(self, pregao_id: int, produto: models.PregaoProdutosModel, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
+        demanda = models.PregaoDemandasModel(
+            pregaoID=pregao_id,
+            demandanteID=body.usuarioID,
+            produtoID=produto.id,
+            demanda=body.demanda
+        )
 
-def create_pregao_fornecedor(db: Session, pregao_id: int, usuario_id: int) -> models.PregaoParticipantesModel:
-    return create_pregao_participante(db, pregao_id, usuario_id, TIPO_PARTICIPANTE_FORNECEDOR)
+        self.db.add(demanda)
+        self.db.commit()
+        self.db.refresh(demanda)
+        
+        return demanda
+    
 
-def create_pregao_demandante(db: Session, pregao_id: int, usuario_id: int) -> models.PregaoParticipantesModel:
-    return create_pregao_participante(db, pregao_id, usuario_id, TIPO_PARTICIPANTE_DEMANDANTE)
+    def create_pregao_demanda(self, pregao_id: int, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
+        
+        self.__validate(pregao_id=pregao_id, user_id=body.usuarioID)
+
+        produto = self.__create_produto(body=body)
+        demanda = self.__create_demanda(pregao_id=pregao_id, produto=produto, body=body)
+
+        return demanda

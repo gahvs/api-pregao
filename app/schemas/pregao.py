@@ -1,6 +1,6 @@
 from pydantic import BaseModel, field_validator
 from datetime import datetime
-from utils import error_functions
+from utils import errors
 
 class PregaoSchema(BaseModel):
 
@@ -19,7 +19,7 @@ class PregaoSchema(BaseModel):
 class PregaoCreateSchema(BaseModel):
 
     descricao: str
-    criadoPor: int
+    usuarioID: int
     dataHoraInicio: str
     dataHoraFim: str
 
@@ -36,11 +36,11 @@ class PregaoCreateSchema(BaseModel):
                 raise ValueError("DATETIME FORMAT INCORRECT")
             
         else:
-            raise ValueError(error_functions.invalid_type(resource_name="dataHoraInicio | dataHoraFim",expected_type="String",received_type=type(value)))
+            raise ValueError(errors.invalid_type(resource_name="dataHoraInicio | dataHoraFim",expected_type="String",received_type=type(value)))
 
-class PregaParticipanteSchema(BaseModel):
+class PregaoParticipanteSchema(BaseModel):
     
-    usuarioId: int
+    usuarioID: int
 
     class Config:
         orm_mode = True
@@ -55,4 +55,28 @@ class PregaoParticipantesResponseSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        from_attributes = True        
+        from_attributes = True
+
+class PregaoDemandaSchema(BaseModel):
+
+    usuarioID: int
+    descricao: str
+    unidade: str
+    demanda: float
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+        
+class PregaoDemandaResponseSchema(BaseModel):
+
+    id: int
+    pregaoID: int
+    demandanteID: int
+    produtoID: int
+    demanda: float
+    criadoEm: datetime 
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
