@@ -39,54 +39,6 @@ class PregaoCreateSchema(BaseModel):
         else:
             raise ValueError(error_functions.invalid_type(resource_name="dataHoraInicio | dataHoraFim",expected_type="String",received_type=type(value)))
 
-
-class PregaoDemandantesSchema(BaseModel):
-    
-    demandantes: List[int]
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
-
-class PregaoDemandantesResponseSchema(BaseModel):
-    
-    id: int
-    descricao: str
-    status: str
-    criadoPor: int
-    criadoEm: datetime
-    dataHoraInicio: datetime
-    dataHoraFim: datetime
-    demandantes: List[int]
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
-
-class PregaoFornecedoresSchema(BaseModel):
-    
-    fornecedores: List[int]
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
-
-class PregaoFornecedoresResponseSchema(BaseModel):
-    
-    id: int
-    descricao: str
-    status: str
-    criadoPor: int
-    criadoEm: datetime
-    dataHoraInicio: datetime
-    dataHoraFim: datetime
-    fornecedores: List[int]
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
-
-
 class PregaParticipanteSchema(BaseModel):
     
     usuarioId: int
