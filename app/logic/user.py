@@ -1,5 +1,23 @@
+from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
-from models.user import UserModel
+from database.instance import get_db
+from models import user as models
+from utils import errors
 
-def get_user(db: Session, user_id: int) -> UserModel:
-    return db.query(UserModel).filter(UserModel.id == user_id).first()
+
+class UserLogic:
+    '''
+        Realiza ações que tem como contexto a tabela PREGAO
+    '''
+
+    def __init__(self, db: Session = Depends(get_db)) -> None:
+        self.db: Session = db
+
+
+    def get_user_by_id(self, user_id: int) -> models.UserModel | HTTPException:
+        user = self.db.query(models.UserModel).filter(models.UserModel.id == user_id).first()
+
+        if user is None:
+            raise HTTPException(status_code=404, detail=errors.not_found_message("USUARIO", user_id))
+        
+        return user

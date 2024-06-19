@@ -4,8 +4,7 @@ from sqlalchemy.orm import Session
 from models import pregao as models
 from schemas import pregao as schemas
 from utils import errors
-from typing import Union
-from . import validations
+from . import user
 
 
 class PregaoLogic:
@@ -80,15 +79,19 @@ class PregaoParticipanteLogic:
     TIPO_PARTICIPANTE_DEMANDANTE = 'DEMANDANTE'        
 
 
-    def __init__(self, db: Session = Depends(get_db), pregao_logic: PregaoLogic = Depends(PregaoLogic)) -> None:
+    def __init__(self, 
+                 db: Session = Depends(get_db), 
+                 pregao_logic: PregaoLogic = Depends(PregaoLogic),
+                 user_logic: user.UserLogic = Depends(user.UserLogic)
+        ) -> None:
+
         self.db: Session = db
+        self.user_logic = user_logic
         self.pregao_logic = pregao_logic
 
 
     def validate(self, pregao_id: int, user_id: int) -> HTTPException | None:
-        if not validations.UserValidation.user_exists(db=self.db, user_id=user_id):
-            raise HTTPException(status_code=404, detail=errors.not_found_message("USUARIO", user_id))
-        
+        _ = self.user_logic.get_user_by_id(user_id=user_id)
         _ = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
 
 
@@ -145,14 +148,17 @@ class PregaoDemandasLogic:
         Realiza ações que tem como contexto a tabela PREGAO_DEMANDAS e PREGAO_PRODUTOS
     '''
         
-    def __init__(self, db: Session = Depends(get_db), pregao_logic: PregaoLogic = Depends(PregaoLogic)) -> None:
+    def __init__(self, 
+                 db: Session = Depends(get_db), 
+                 pregao_logic: PregaoLogic = Depends(PregaoLogic),            
+                 user_logic: user.UserLogic = Depends(user.UserLogic)
+            ) -> None:
         self.db: Session = db
+        self.user_logic = user_logic
         self.pregao_logic = pregao_logic
 
     def __validate(self, pregao_id: int, user_id: int) -> HTTPException | None:
-        if not validations.UserValidation.user_exists(db=self.db, user_id=user_id):
-            raise HTTPException(status_code=404, detail=errors.not_found_message("USUARIO", user_id))
-        
+        _ = self.user_logic.get_user_by_id(user_id=user_id)
         _ = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
 
     def __create_produto(self,  body: schemas.PregaoDemandaSchema) -> models.PregaoProdutosModel:
