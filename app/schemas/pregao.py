@@ -1,6 +1,5 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator
 from datetime import datetime
-from typing import List, Optional
 from utils import error_functions
 
 class PregaoSchema(BaseModel):
