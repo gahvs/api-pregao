@@ -16,6 +16,7 @@ class PregaoSchema(BaseModel):
         orm_mode = True
         from_attributes = True
 
+
 class PregaoCreateSchema(BaseModel):
 
     descricao: str
@@ -38,6 +39,7 @@ class PregaoCreateSchema(BaseModel):
         else:
             raise ValueError(errors.invalid_type(resource_name="dataHoraInicio | dataHoraFim",expected_type="String",received_type=type(value)))
 
+
 class PregaoParticipanteSchema(BaseModel):
     
     usuarioID: int
@@ -45,6 +47,7 @@ class PregaoParticipanteSchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
 
 class PregaoParticipantesResponseSchema(BaseModel):
     
@@ -57,6 +60,7 @@ class PregaoParticipantesResponseSchema(BaseModel):
         orm_mode = True
         from_attributes = True
 
+
 class PregaoDemandaSchema(BaseModel):
 
     usuarioID: int
@@ -67,7 +71,17 @@ class PregaoDemandaSchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
-        
+
+
+class PregaoDemandaUpdateQuantidadeSchema(BaseModel):
+
+    quantidade: float
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
 class PregaoDemandaResponseSchema(BaseModel):
 
     id: int

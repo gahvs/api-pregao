@@ -50,6 +50,12 @@ def create_pregao_demandante(pregao_id: int, body: schemas.PregaoParticipanteSch
     return schemas.PregaoParticipantesResponseSchema.model_validate(demandante)
 
 
+@router.get("/{pregao_id}/participantes", response_model=List[schemas.PregaoParticipantesResponseSchema])
+def get_pregao_participantes(pregao_id: int, logic: PregaoParticipanteLogic = Depends()):
+    participantes = logic.get_pregao_participantes(pregao_id=pregao_id)
+    return list(map(lambda p: schemas.PregaoParticipantesResponseSchema.model_validate(p), participantes))
+
+
 @router.post("/{pregao_id}/demanda", response_model=schemas.PregaoDemandaResponseSchema)
 def create_pregao_demanda(pregao_id: int, body: schemas.PregaoDemandaSchema, logic: PregaoDemandasLogic = Depends()):
     demanda = logic.create_pregao_demanda(pregao_id=pregao_id, body=body)
@@ -62,7 +68,7 @@ def get_pregao_demandas(pregao_id: int, logic: PregaoDemandasLogic = Depends()):
     return list(map(lambda d: schemas.PregaoDemandaResponseSchema.model_validate(d), demandas))
 
 
-@router.get("/{pregao_id}/participantes", response_model=List[schemas.PregaoParticipantesResponseSchema])
-def get_pregao_participantes(pregao_id: int, logic: PregaoParticipanteLogic = Depends()):
-    participantes = logic.get_pregao_participantes(pregao_id=pregao_id)
-    return list(map(lambda p: schemas.PregaoParticipantesResponseSchema.model_validate(p), participantes))
+@router.put("/demanda/{demanda_id}/alterar/quantidade", response_model=schemas.PregaoDemandaResponseSchema)
+def update_demanda_quantidade(demanda_id: int, body: schemas.PregaoDemandaUpdateQuantidadeSchema, logic: PregaoDemandasLogic = Depends()):
+    demanda = logic.update_demanda_quantidade(demanda_id=demanda_id, body=body)
+    return schemas.PregaoDemandaResponseSchema.model_validate(demanda)

@@ -198,7 +198,23 @@ class PregaoDemandasLogic:
             raise HTTPException(status_code=400, detail=f"Usuário {user_id} é um fornecedor do Pregão {pregao_id}, não é possível definir demandas")
 
 
-    def __create_demanda(self, pregao_id: int, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
+    def get_demanda_by_id(self, demanda_id: int) -> models.PregaoDemandasModel | HTTPException:
+
+        demanda: models.PregaoDemandasModel = self.db.query(models.PregaoDemandasModel).filter(
+            models.PregaoDemandasModel.id == demanda_id
+        ).first()
+
+        if demanda == None:
+            raise HTTPException(status_code=404, detail=f"Não foi encontrada Demanda com ID {demanda_id}")
+        
+        return demanda    
+
+
+    def create_pregao_demanda(self, pregao_id: int, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
+        
+        self.validate_pregao(pregao_id=pregao_id)
+        self.validate_participante(pregao_id=pregao_id, user_id=body.usuarioID)
+
         demanda = models.PregaoDemandasModel(
             pregaoID=pregao_id,
             usuarioID=body.usuarioID,
@@ -210,20 +226,23 @@ class PregaoDemandasLogic:
         self.db.add(demanda)
         self.db.commit()
         self.db.refresh(demanda)
-        
-        return demanda
-    
-
-    def create_pregao_demanda(self, pregao_id: int, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
-        
-        self.validate_pregao(pregao_id=pregao_id)
-        self.validate_participante(pregao_id=pregao_id, user_id=body.usuarioID)
-
-        demanda: models.PregaoDemandasModel = self.__create_demanda(pregao_id=pregao_id, body=body)
 
         return demanda
     
-    def get_pregao_demandas(self, pregao_id: int) -> List[models.PregaoDemandasModel]:
+    
+    def update_demanda_quantidade(self, demanda_id: int, body: schemas.PregaoDemandaUpdateQuantidadeSchema) -> models.PregaoDemandasModel | HTTPException:
+
+        demanda: models.PregaoDemandasModel = self.get_demanda_by_id(demanda_id=demanda_id)
+        demanda.quantidade = body.quantidade
+
+        self.db.add(demanda)
+        self.db.commit()
+        self.db.refresh(demanda)
+
+        return demanda
+
+
+    def get_pregao_demandas(self, pregao_id: int) -> List[models.PregaoDemandasModel] | HTTPException:
 
         pregao: models.PregaoModel = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
         
