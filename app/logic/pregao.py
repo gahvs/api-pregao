@@ -156,6 +156,19 @@ class PregaoParticipanteLogic:
         return self.create_participante(body=body, pregao_id=pregao_id, tipoParticipante=self.TIPO_PARTICIPANTE_DEMANDANTE)    
 
 
+    def get_pregao_participantes(self, pregao_id: int) -> List[models.PregaoParticipantesModel]:
+        pregao: models.PregaoModel = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
+
+        participantes: List[models.PregaoParticipantesModel] = self.db.query(models.PregaoParticipantesModel).filter(
+            models.PregaoParticipantesModel.pregaoID == pregao.id
+        ).all()
+
+        if participantes == []:
+            raise HTTPException(status_code=204, detail=f"O pregão {pregao_id} não possui participantes")
+        
+        return participantes
+
+
 class PregaoDemandasLogic:
     '''
         Realiza ações que tem como contexto a tabela PREGAO_DEMANDAS e PREGAO_PRODUTOS
@@ -206,7 +219,7 @@ class PregaoDemandasLogic:
         self.validate_pregao(pregao_id=pregao_id)
         self.validate_participante(pregao_id=pregao_id, user_id=body.usuarioID)
 
-        demanda = self.__create_demanda(pregao_id=pregao_id, body=body)
+        demanda: models.PregaoDemandasModel = self.__create_demanda(pregao_id=pregao_id, body=body)
 
         return demanda
     
@@ -218,7 +231,7 @@ class PregaoDemandasLogic:
             models.PregaoDemandasModel.pregaoID == pregao.id
         ).all()
 
-        if demandas is None:
+        if demandas == []:
             raise HTTPException(status_code=204, detail=f"Não há demandas para o Pregão {pregao_id}")
 
         return demandas

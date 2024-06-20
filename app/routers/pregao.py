@@ -60,3 +60,9 @@ def create_pregao_demanda(pregao_id: int, body: schemas.PregaoDemandaSchema, log
 def get_pregao_demandas(pregao_id: int, logic: PregaoDemandasLogic = Depends()):
     demandas = logic.get_pregao_demandas(pregao_id=pregao_id)
     return list(map(lambda d: schemas.PregaoDemandaResponseSchema.model_validate(d), demandas))
+
+
+@router.get("/{pregao_id}/participantes", response_model=List[schemas.PregaoParticipantesResponseSchema])
+def get_pregao_participantes(pregao_id: int, logic: PregaoParticipanteLogic = Depends()):
+    participantes = logic.get_pregao_participantes(pregao_id=pregao_id)
+    return list(map(lambda p: schemas.PregaoParticipantesResponseSchema.model_validate(p), participantes))
