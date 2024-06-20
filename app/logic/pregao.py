@@ -18,8 +18,12 @@ class PregaoLogic:
     PREGAO_REJECTED_STATUS = 'REJEITADO'
 
 
-    def __init__(self, db: Session = Depends(get_db)) -> None:
+    def __init__(self, db: Session = Depends(get_db), user_logic: user.UserLogic = Depends(user.UserLogic)) -> None:
         self.db: Session = db
+        self.user_logic = user_logic
+
+    def validate(self, user_id: int):
+        _ = self.user_logic.get_user_by_id(user_id=user_id)
 
 
     def get_pregao_by_id(self, pregao_id: int) -> models.PregaoModel | HTTPException:
@@ -32,6 +36,8 @@ class PregaoLogic:
         
 
     def create_pregao(self, body: schemas.PregaoCreateSchema) -> models.PregaoModel:
+        self.validate(body.usuarioID)
+
         pregao = models.PregaoModel(
             descricao=body.descricao,
             criadoPor=body.usuarioID,
@@ -90,19 +96,25 @@ class PregaoParticipanteLogic:
         self.pregao_logic = pregao_logic
 
 
-    def validate(self, pregao_id: int, user_id: int) -> HTTPException | None:
-        _ = self.user_logic.get_user_by_id(user_id=user_id)
+    def validate(self, pregao_id: int, usuario_id: int) -> HTTPException | None:
+        _ = self.user_logic.get_user_by_id(user_id=usuario_id)
         _ = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
 
 
-    def get_participante_by_pregao_usuario(self, pregao_id: int, usuario_id: int) -> models.PregaoParticipantesModel:
+    def get_participante_by_pregao_usuario(self, pregao_id: int, usuario_id: int) -> models.PregaoParticipantesModel | HTTPException:
+        self.validate(pregao_id=pregao_id, usuario_id=usuario_id)
+        print("pregao_id:", pregao_id)
+        print("usuario_id:",usuario_id)
+
         return self.db.query(models.PregaoParticipantesModel).filter(
             models.PregaoParticipantesModel.pregaoID == pregao_id,
             models.PregaoParticipantesModel.usuarioID == usuario_id
         ).first()
 
 
-    def participante_isin_pregao(self, pregao_id:int, usuario_id: int) -> bool:
+    def participante_isin_pregao(self, pregao_id:int, usuario_id: int) -> bool | HTTPException:
+        self.validate(pregao_id=pregao_id, usuario_id=usuario_id)
+
         query = self.db.query(models.PregaoParticipantesModel).filter(
             models.PregaoParticipantesModel.pregaoID == pregao_id,
             models.PregaoParticipantesModel.usuarioID == usuario_id
@@ -125,7 +137,7 @@ class PregaoParticipanteLogic:
         return participante
     
     
-    def create_fornecedor(self, body: schemas.PregaoParticipanteSchema, pregao_id: int) -> models.PregaoParticipantesModel:    
+    def create_fornecedor(self, body: schemas.PregaoParticipanteSchema, pregao_id: int) -> models.PregaoParticipantesModel | HTTPException:    
         self.validate(pregao_id, body.usuarioID)
 
         if self.participante_isin_pregao(pregao_id=pregao_id, usuario_id=body.usuarioID):
@@ -150,33 +162,31 @@ class PregaoDemandasLogic:
         
     def __init__(self, 
                  db: Session = Depends(get_db), 
-                 pregao_logic: PregaoLogic = Depends(PregaoLogic),            
-                 user_logic: user.UserLogic = Depends(user.UserLogic)
+                 pregao_logic: PregaoLogic = Depends(PregaoLogic),
+                 pregao_participante_logic: PregaoParticipanteLogic = Depends(PregaoParticipanteLogic)
             ) -> None:
         self.db: Session = db
-        self.user_logic = user_logic
-        self.pregao_logic = pregao_logic
+        self.pregao_logic: PregaoLogic = pregao_logic
+        self.pregao_participante_logic: PregaoParticipanteLogic = pregao_participante_logic
 
-    def __validate(self, pregao_id: int, user_id: int) -> HTTPException | None:
-        _ = self.user_logic.get_user_by_id(user_id=user_id)
+    def validate(self, pregao_id: int, user_id: int) -> HTTPException | None:
         _ = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
+        
+        participante = self.pregao_participante_logic.get_participante_by_pregao_usuario(pregao_id=pregao_id, usuario_id=user_id)
+        
+        if participante is None:
+            raise HTTPException(status_code=404, detail=f"Usuário {user_id} não é Demandante do Pregão {pregao_id}")
 
-    def __create_produto(self,  body: schemas.PregaoDemandaSchema) -> models.PregaoProdutosModel:
-        produto = models.PregaoProdutosModel(demandanteID=body.usuarioID, descricao=body.descricao, unidade=body.unidade)
+        if participante.tipoParticipante == self.pregao_participante_logic.TIPO_PARTICIPANTE_FORNECEDOR:
+            raise HTTPException(status_code=400, detail=f"Usuário {user_id} é um fornecedor do Pregão {pregao_id}, não é possível definir demandas")
 
-        self.db.add(produto)
-        self.db.commit()
-        self.db.refresh(produto)
-
-        return produto
-    
-
-    def __create_demanda(self, pregao_id: int, produto: models.PregaoProdutosModel, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
+    def __create_demanda(self, pregao_id: int, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
         demanda = models.PregaoDemandasModel(
             pregaoID=pregao_id,
-            demandanteID=body.usuarioID,
-            produtoID=produto.id,
-            demanda=body.demanda
+            usuarioID=body.usuarioID,
+            descricao=body.descricao,
+            unidade=body.unidade,
+            quantidade=body.quantidade
         )
 
         self.db.add(demanda)
@@ -188,9 +198,8 @@ class PregaoDemandasLogic:
 
     def create_pregao_demanda(self, pregao_id: int, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
         
-        self.__validate(pregao_id=pregao_id, user_id=body.usuarioID)
+        self.validate(pregao_id=pregao_id, user_id=body.usuarioID)
 
-        produto = self.__create_produto(body=body)
-        demanda = self.__create_demanda(pregao_id=pregao_id, produto=produto, body=body)
+        demanda = self.__create_demanda(pregao_id=pregao_id, body=body)
 
         return demanda

@@ -48,6 +48,7 @@ def create_pregao_demandante(pregao_id: int, body: schemas.PregaoParticipanteSch
     demandante = logic.create_demandante(body=body, pregao_id=pregao_id)
     return schemas.PregaoParticipantesResponseSchema.model_validate(demandante)
 
+
 @router.post("/{pregao_id}/demanda", response_model=schemas.PregaoDemandaResponseSchema)
 def create_pregao_demanda(pregao_id: int, body: schemas.PregaoDemandaSchema, logic: PregaoDemandasLogic = Depends()):
     demanda = logic.create_pregao_demanda(pregao_id=pregao_id, body=body)

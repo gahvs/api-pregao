@@ -23,15 +23,6 @@ class PregaoParticipantesModel(Base):
     usuarioID = Column(BigInteger)
     tipoParticipante = Column(String)
 
-class PregaoProdutosModel(Base):
-
-    __tablename__ = "PREGAO_PRODUTOS"
-
-    id = Column(BigInteger, primary_key=True, index=True)
-    demandanteID = Column(BigInteger)
-    descricao = Column(String)
-    unidade = Column(String)
-    criadoEm = Column(DateTime, default=datetime.now().isoformat())
 
 class PregaoDemandasModel(Base):
 
@@ -39,7 +30,8 @@ class PregaoDemandasModel(Base):
     
     id = Column(BigInteger, primary_key=True, index=True)
     pregaoID = Column(BigInteger)
-    demandanteID = Column(BigInteger)
-    produtoID = Column(BigInteger)
-    demanda = Column(Double)
+    usuarioID = Column(BigInteger)
+    descricao = Column(String)
+    quantidade = Column(Double)
+    unidade = Column(String)
     criadoEm = Column(DateTime, default=datetime.now().isoformat())

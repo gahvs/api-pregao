@@ -62,7 +62,7 @@ class PregaoDemandaSchema(BaseModel):
     usuarioID: int
     descricao: str
     unidade: str
-    demanda: float
+    quantidade: float
 
     class Config:
         orm_mode = True
@@ -72,9 +72,10 @@ class PregaoDemandaResponseSchema(BaseModel):
 
     id: int
     pregaoID: int
-    demandanteID: int
-    produtoID: int
-    demanda: float
+    usuarioID: int
+    descricao: str
+    unidade: str
+    quantidade: float
     criadoEm: datetime 
 
     class Config:
