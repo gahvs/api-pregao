@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from typing import List
 from logic.pregao import PregaoLogic, PregaoParticipanteLogic, PregaoDemandasLogic
 import schemas.pregao as schemas
 
@@ -53,3 +54,9 @@ def create_pregao_demandante(pregao_id: int, body: schemas.PregaoParticipanteSch
 def create_pregao_demanda(pregao_id: int, body: schemas.PregaoDemandaSchema, logic: PregaoDemandasLogic = Depends()):
     demanda = logic.create_pregao_demanda(pregao_id=pregao_id, body=body)
     return schemas.PregaoDemandaResponseSchema.model_validate(demanda)
+
+
+@router.get("/{pregao_id}/demandas", response_model=List[schemas.PregaoDemandaResponseSchema])
+def get_pregao_demandas(pregao_id: int, logic: PregaoDemandasLogic = Depends()):
+    demandas = logic.get_pregao_demandas(pregao_id=pregao_id)
+    return list(map(lambda d: schemas.PregaoDemandaResponseSchema.model_validate(d), demandas))

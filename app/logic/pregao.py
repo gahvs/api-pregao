@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from models import pregao as models
 from schemas import pregao as schemas
 from utils import errors
+from typing import List
 from . import user
 
 
@@ -169,8 +170,11 @@ class PregaoDemandasLogic:
         self.pregao_logic: PregaoLogic = pregao_logic
         self.pregao_participante_logic: PregaoParticipanteLogic = pregao_participante_logic
 
-    def validate(self, pregao_id: int, user_id: int) -> HTTPException | None:
+    def validate_pregao(self, pregao_id: int) -> HTTPException | None: 
         _ = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
+    
+    
+    def validate_participante(self, pregao_id: int, user_id: int) -> HTTPException | None:
         
         participante = self.pregao_participante_logic.get_participante_by_pregao_usuario(pregao_id=pregao_id, usuario_id=user_id)
         
@@ -179,6 +183,7 @@ class PregaoDemandasLogic:
 
         if participante.tipoParticipante == self.pregao_participante_logic.TIPO_PARTICIPANTE_FORNECEDOR:
             raise HTTPException(status_code=400, detail=f"Usuário {user_id} é um fornecedor do Pregão {pregao_id}, não é possível definir demandas")
+
 
     def __create_demanda(self, pregao_id: int, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
         demanda = models.PregaoDemandasModel(
@@ -198,8 +203,22 @@ class PregaoDemandasLogic:
 
     def create_pregao_demanda(self, pregao_id: int, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
         
-        self.validate(pregao_id=pregao_id, user_id=body.usuarioID)
+        self.validate_pregao(pregao_id=pregao_id)
+        self.validate_participante(pregao_id=pregao_id, user_id=body.usuarioID)
 
         demanda = self.__create_demanda(pregao_id=pregao_id, body=body)
 
         return demanda
+    
+    def get_pregao_demandas(self, pregao_id: int) -> List[models.PregaoDemandasModel]:
+
+        pregao: models.PregaoModel = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
+        
+        demandas: List[models.PregaoDemandasModel] = self.db.query(models.PregaoDemandasModel).filter(
+            models.PregaoDemandasModel.pregaoID == pregao.id
+        ).all()
+
+        if demandas is None:
+            raise HTTPException(status_code=204, detail=f"Não há demandas para o Pregão {pregao_id}")
+
+        return demandas
