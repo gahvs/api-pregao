@@ -6,6 +6,7 @@ class PregaoSchema(BaseModel):
 
     id: int
     descricao: str
+    informacoes: str
     status: str
     criadoPor: int
     criadoEm: datetime
@@ -20,6 +21,7 @@ class PregaoSchema(BaseModel):
 class PregaoCreateSchema(BaseModel):
 
     descricao: str
+    informacoes: str
     usuarioID: int
     dataHoraInicio: str
     dataHoraFim: str

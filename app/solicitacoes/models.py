@@ -7,9 +7,12 @@ class SolicitacoesModel(Base):
 
     id = Column(BigInteger, primary_key=True, index=True)
     descricao = Column(String)
+    informacoes = Column(String)
     status = Column(String)
+    dataHoraInicioSugerida = Column(DateTime)
+    dataHoraFimSugerida = Column(DateTime)
     criadoPor = Column(BigInteger)
-    observacao = Column(String)
+    motivoRejeicao = Column(String)
     criadoEm = Column(DateTime, default=func.now())
     atualizadoEm = Column(DateTime, default=func.now(), onupdate=func.now())
 

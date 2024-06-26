@@ -11,7 +11,9 @@ class SolicitacaoLogic:
         Realiza ações que tem como contexto a tabela PREGAO_SOLICITACOES
     '''
     
-    STATUS_AGUARDANDO = "Em análise"
+    STATUS_EM_ANALISE = "Em análise"
+    STATUS_APROVADO = "Aprovado"
+    STATUS_REJEITADO = "Rejeitado"
     
     OBSERVACAO_DEFAULT_VALUE = "Estamos analisando sua solicitação de Pregão"
 
@@ -47,12 +49,42 @@ class SolicitacaoLogic:
         solicitacao_criador = self.get_solicitacao_criador(criador_id=body.criadoPor)
 
         solicitacao = models.SolicitacoesModel(
-            descricao=body.descricao,        
+            descricao=body.descricao,
+            informacoes=body.informacoes,
+            dataHoraInicioSugerida=body.dataHoraInicioSugerida,
+            dataHoraFimSugerida=body.dataHoraFimSugerida,
             criadoPor=solicitacao_criador.id,
-            status=self.STATUS_AGUARDANDO,
-            observacao=self.OBSERVACAO_DEFAULT_VALUE,
+            status=self.STATUS_EM_ANALISE,
+            motivoRejeicao="",
         )
 
+        self.db.add(solicitacao)
+        self.db.commit()
+        self.db.refresh(solicitacao)
+
+        return solicitacao
+    
+
+    def update_solicitacao_status(self, solicitacao_id: int, new_status: str) -> models.SolicitacoesModel | HTTPException:
+        solicitacao: models.SolicitacoesItensModel = self.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
+
+        solicitacao.status = new_status
+        self.db.add(solicitacao)
+        self.db.commit()
+        self.db.refresh(solicitacao)
+
+        return solicitacao
+    
+
+    def approve_solicitacao(self, solicitacao_id: int) -> models.SolicitacoesItensModel | HTTPException:
+        return self.update_solicitacao_status(solicitacao_id=solicitacao_id, new_status=self.STATUS_APROVADO)
+
+
+    def reject_solicitacao(self, solicitacao_id: int, body: schemas.SolicitacoesRejeicaoBodySchema) -> models.SolicitacoesItensModel | HTTPException:
+        solicitacao = self.update_solicitacao_status(solicitacao_id=solicitacao_id, new_status=self.STATUS_REJEITADO)
+
+        solicitacao.motivoRejeicao = body.motivoRejeicao
+        
         self.db.add(solicitacao)
         self.db.commit()
         self.db.refresh(solicitacao)

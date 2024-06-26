@@ -40,6 +40,7 @@ class PregaoLogic:
 
         pregao = models.PregaoModel(
             descricao=body.descricao,
+            informacoes=body.informacoes,
             criadoPor=body.usuarioID,
             dataHoraInicio=body.dataHoraInicio,
             dataHoraFim=body.dataHoraFim

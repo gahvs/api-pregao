@@ -1,10 +1,22 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Optional
 
 class SolicitacoesBodySchema(BaseModel):
 
     descricao: str
+    informacoes: str
+    dataHoraInicioSugerida: Optional[str] = Field(default=None)
+    dataHoraFimSugerida: Optional[str] = Field(default=None)
     criadoPor: int
+    
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+class SolicitacoesRejeicaoBodySchema(BaseModel):
+
+    motivoRejeicao: str
     
     class Config:
         orm_mode = True
@@ -14,9 +26,12 @@ class SolicitacoesResponseSchema(BaseModel):
 
     id: int
     descricao: str
+    informacoes: str
+    dataHoraInicioSugerida: Optional[datetime] = Field(default=None)
+    dataHoraFimSugerida: Optional[datetime] = Field(default=None)
     criadoPor: int
     status: str
-    observacao: str
+    motivoRejeicao: str
     criadoEm: datetime
     atualizadoEm: datetime
     
