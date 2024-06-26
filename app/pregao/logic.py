@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from utils import errors
 from typing import List
 from user.logic import UserLogic
+from solicitacoes.logic import SolicitacaoItensLogic
+from solicitacoes.models import SolicitacoesItensModel
 from . import models
 from . import schemas
 
@@ -18,9 +20,15 @@ class PregaoLogic:
     PREGAO_AUTHORIZED_STATUS = 'AUTORIZADO'
     PREGAO_REJECTED_STATUS = 'REJEITADO'
 
-    def __init__(self, db: Session = Depends(get_db), user_logic: UserLogic = Depends(UserLogic)) -> None:
+    def __init__(self, 
+                 db: Session = Depends(get_db), 
+                 user_logic: UserLogic = Depends(UserLogic),
+                 solicitacao_itens_logic: SolicitacaoItensLogic = Depends(SolicitacaoItensLogic)
+            ) -> None:
+        
         self.db: Session = db
-        self.user_logic = user_logic
+        self.user_logic: UserLogic = user_logic
+        self.solicitacao_itens_logic: SolicitacaoItensLogic = solicitacao_itens_logic
 
     def validate(self, user_id: int):
         _ = self.user_logic.get_user_by_id(user_id=user_id)
@@ -33,7 +41,6 @@ class PregaoLogic:
             raise HTTPException(status_code=404, detail=errors.not_found_message("PREGAO", pregao_id))
         
         return pregao
-        
 
     def create_pregao(self, body: schemas.PregaoCreateSchema) -> models.PregaoModel:
         self.validate(body.usuarioID)
@@ -43,7 +50,9 @@ class PregaoLogic:
             informacoes=body.informacoes,
             criadoPor=body.usuarioID,
             dataHoraInicio=body.dataHoraInicio,
-            dataHoraFim=body.dataHoraFim
+            dataHoraFim=body.dataHoraFim,
+            abertoADemandasEm=body.abertoADemandasEm,
+            abertoADemandasAte=body.abertoADemandasAte
         )
 
         self.db.add(pregao)
@@ -169,9 +178,9 @@ class PregaoParticipanteLogic:
         return participantes
 
 
-class PregaoDemandasLogic:
+class PregaoItensLogic:
     '''
-        Realiza ações que tem como contexto a tabela PREGAO_DEMANDAS e PREGAO_PRODUTOS
+        Realiza ações que tem como contexto a tabela PREGAO_PREGOES_ITENS
     '''
         
     def __init__(self, 
@@ -198,10 +207,10 @@ class PregaoDemandasLogic:
             raise HTTPException(status_code=400, detail=f"Usuário {user_id} é um fornecedor do Pregão {pregao_id}, não é possível definir demandas")
 
 
-    def get_demanda_by_id(self, demanda_id: int) -> models.PregaoDemandasModel | HTTPException:
+    def get_demanda_by_id(self, demanda_id: int) -> models.PregaoItensModel | HTTPException:
 
-        demanda: models.PregaoDemandasModel = self.db.query(models.PregaoDemandasModel).filter(
-            models.PregaoDemandasModel.id == demanda_id
+        demanda: models.PregaoItensModel = self.db.query(models.PregaoItensModel).filter(
+            models.PregaoItensModel.id == demanda_id
         ).first()
 
         if demanda == None:
@@ -210,15 +219,15 @@ class PregaoDemandasLogic:
         return demanda    
 
 
-    def create_pregao_demanda(self, pregao_id: int, body: schemas.PregaoDemandaSchema) -> models.PregaoDemandasModel:
+    def create_pregao_demanda(self, pregao_id: int, body: schemas.PregaoItensSchema) -> models.PregaoItensModel:
         
         self.validate_pregao(pregao_id=pregao_id)
-        self.validate_participante(pregao_id=pregao_id, user_id=body.usuarioID)
+        self.validate_participante(pregao_id=pregao_id, user_id=body.criadoPor)
 
-        demanda = models.PregaoDemandasModel(
+        demanda = models.PregaoItensModel(
             pregaoID=pregao_id,
-            usuarioID=body.usuarioID,
-            descricao=body.descricao,
+            itemID=body.itemID,
+            criadoPor=body.criadoPor,
             unidade=body.unidade,
             quantidade=body.quantidade
         )
@@ -230,9 +239,9 @@ class PregaoDemandasLogic:
         return demanda
     
     
-    def update_demanda_quantidade(self, demanda_id: int, body: schemas.PregaoDemandaUpdateQuantidadeSchema) -> models.PregaoDemandasModel | HTTPException:
+    def update_demanda_quantidade(self, demanda_id: int, body: schemas.PregaoItensUpdateQuantidadeSchema) -> models.PregaoItensModel | HTTPException:
 
-        demanda: models.PregaoDemandasModel = self.get_demanda_by_id(demanda_id=demanda_id)
+        demanda: models.PregaoItensModel = self.get_demanda_by_id(demanda_id=demanda_id)
         demanda.quantidade = body.quantidade
 
         self.db.add(demanda)
@@ -242,12 +251,12 @@ class PregaoDemandasLogic:
         return demanda
 
 
-    def get_pregao_demandas(self, pregao_id: int) -> List[models.PregaoDemandasModel] | HTTPException:
+    def get_pregao_demandas(self, pregao_id: int) -> List[models.PregaoItensModel] | HTTPException:
 
         pregao: models.PregaoModel = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
         
-        demandas: List[models.PregaoDemandasModel] = self.db.query(models.PregaoDemandasModel).filter(
-            models.PregaoDemandasModel.pregaoID == pregao.id
+        demandas: List[models.PregaoItensModel] = self.db.query(models.PregaoItensModel).filter(
+            models.PregaoItensModel.pregaoID == pregao.id
         ).all()
 
         if demandas == []:

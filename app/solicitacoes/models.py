@@ -22,8 +22,8 @@ class SolicitacoesItensModel(Base):
 
     id = Column(BigInteger, primary_key=True, index=True)
     solicitacaoID = Column(BigInteger)
+    itemID = Column(BigInteger)
     criadoPor = Column(BigInteger)
-    descricao = Column(String)
     unidade = Column(String)
     projecaoQuantidade = Column(Double)
     criadoEm = Column(DateTime, default=func.now())

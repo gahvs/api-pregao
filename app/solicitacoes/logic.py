@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from database.instance import get_db
 from user.logic import UserLogic
 from user.models import UserModel
+from itens.logic import ItensLogic
+from typing import List
 from . import models
 from . import schemas
 
@@ -99,19 +101,22 @@ class SolicitacaoItensLogic:
     
     def __init__(self, 
                  db: Session = Depends(get_db),
-                 solicitacao_logic: SolicitacaoLogic = Depends(SolicitacaoLogic)) -> None:
+                 solicitacao_logic: SolicitacaoLogic = Depends(SolicitacaoLogic),
+                 itens_logic: ItensLogic = Depends(ItensLogic)
+            ) -> None:
         self.db: Session = db
+        self.itens_logic: ItensLogic = itens_logic
         self.solicitacao_logic: SolicitacaoLogic = solicitacao_logic
 
     
-    def create_solicitacao_item(self, body: schemas.SolicitacoesItensBodySchema) -> models.SolicitacoesItensModel | HTTPException:
+    def create_solicitacao_item(self, solicitacao_id: int, body: schemas.SolicitacoesItensBodySchema) -> models.SolicitacoesItensModel | HTTPException:
         
-        solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=body.solicitacaoID)
+        solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
 
         item = models.SolicitacoesItensModel(
             solicitacaoID=solicitacao.id,
             criadoPor=solicitacao.criadoPor,
-            descricao=body.descricao,
+            itemID=body.itemID,
             unidade=body.unidade,
             projecaoQuantidade=body.projecaoQuantidade,
         )
@@ -121,3 +126,17 @@ class SolicitacaoItensLogic:
         self.db.refresh(item)
 
         return item
+    
+
+    def get_solicitacao_itens(self, solicitacao_id: int) -> List[models.SolicitacoesItensModel] | HTTPException:
+
+        solicitacao: models.SolicitacoesModel = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
+
+        itens: List[models.SolicitacoesItensModel] = self.db.query(models.SolicitacoesItensModel).filter(
+            models.SolicitacoesItensModel.solicitacaoID == solicitacao.id
+        ).all()
+
+        if itens == []:
+            raise HTTPException(status_code=204, detail=f"A solicitação {solicitacao_id} não tem itens cadastrados")
+        
+        return itens

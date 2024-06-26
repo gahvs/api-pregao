@@ -56,19 +56,23 @@ def get_pregao_participantes(pregao_id: int, logic: logic.PregaoParticipanteLogi
     return list(map(lambda p: schemas.PregaoParticipantesResponseSchema.model_validate(p), participantes))
 
 
-@router.post("/{pregao_id}/demanda", response_model=schemas.PregaoDemandaResponseSchema)
-def create_pregao_demanda(pregao_id: int, body: schemas.PregaoDemandaSchema, logic: logic.PregaoDemandasLogic = Depends()):
+@router.post("/{pregao_id}/demanda", response_model=schemas.PregaoItensResponseSchema)
+def create_pregao_demanda(pregao_id: int, body: schemas.PregaoItensSchema, logic: logic.PregaoItensLogic = Depends()):
     demanda = logic.create_pregao_demanda(pregao_id=pregao_id, body=body)
-    return schemas.PregaoDemandaResponseSchema.model_validate(demanda)
+    return schemas.PregaoItensResponseSchema.model_validate(demanda)
 
 
-@router.get("/{pregao_id}/demandas", response_model=List[schemas.PregaoDemandaResponseSchema])
-def get_pregao_demandas(pregao_id: int, logic: logic.PregaoDemandasLogic = Depends()):
+@router.get("/{pregao_id}/demandas", response_model=List[schemas.PregaoItensResponseSchema])
+def get_pregao_demandas(pregao_id: int, logic: logic.PregaoItensLogic = Depends()):
     demandas = logic.get_pregao_demandas(pregao_id=pregao_id)
-    return list(map(lambda d: schemas.PregaoDemandaResponseSchema.model_validate(d), demandas))
+    return list(map(lambda d: schemas.PregaoItensResponseSchema.model_validate(d), demandas))
 
 
-@router.put("/demanda/{demanda_id}/alterar/quantidade", response_model=schemas.PregaoDemandaResponseSchema)
-def update_demanda_quantidade(demanda_id: int, body: schemas.PregaoDemandaUpdateQuantidadeSchema, logic: logic.PregaoDemandasLogic = Depends()):
+@router.put("/demanda/{demanda_id}/alterar/quantidade", response_model=schemas.PregaoItensResponseSchema)
+def update_demanda_quantidade(demanda_id: int, body: schemas.PregaoItensUpdateQuantidadeSchema, logic: logic.PregaoItensLogic = Depends()):
     demanda = logic.update_demanda_quantidade(demanda_id=demanda_id, body=body)
-    return schemas.PregaoDemandaResponseSchema.model_validate(demanda)
+    return schemas.PregaoItensResponseSchema.model_validate(demanda)
+
+# TODO:
+# Corrigir bug que irá disparar uma exceção quando o Logic do Pregao usar o Logic do Solicitacoes para pegar os itens de uma solicitacao sem itens
+# Deixar retornar exceção mesmo? ou seja só permitir conversão Solicitação -> Pregão quando a solicitação possuir itens? 

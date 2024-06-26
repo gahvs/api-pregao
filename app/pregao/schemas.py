@@ -1,4 +1,5 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
+from typing import List, Optional
 from datetime import datetime
 from utils import errors
 
@@ -10,8 +11,11 @@ class PregaoSchema(BaseModel):
     status: str
     criadoPor: int
     criadoEm: datetime
+    atualizadoEm: datetime
     dataHoraInicio: datetime
     dataHoraFim: datetime
+    abertoADemandasEm: datetime
+    abertoADemandasAte: datetime
 
     class Config:
         orm_mode = True
@@ -25,6 +29,9 @@ class PregaoCreateSchema(BaseModel):
     usuarioID: int
     dataHoraInicio: str
     dataHoraFim: str
+    abertoADemandasEm: str
+    abertoADemandasAte: str
+    solicitacoes: Optional[List[int]] = Field(default=[])
 
     class Config:
         orm_mode = True
@@ -63,10 +70,10 @@ class PregaoParticipantesResponseSchema(BaseModel):
         from_attributes = True
 
 
-class PregaoDemandaSchema(BaseModel):
+class PregaoItensSchema(BaseModel):
 
-    usuarioID: int
-    descricao: str
+    criadoPor: int
+    itemID: int
     unidade: str
     quantidade: float
 
@@ -75,7 +82,7 @@ class PregaoDemandaSchema(BaseModel):
         from_attributes = True
 
 
-class PregaoDemandaUpdateQuantidadeSchema(BaseModel):
+class PregaoItensUpdateQuantidadeSchema(BaseModel):
 
     quantidade: float
 
@@ -84,12 +91,12 @@ class PregaoDemandaUpdateQuantidadeSchema(BaseModel):
         from_attributes = True
 
 
-class PregaoDemandaResponseSchema(BaseModel):
+class PregaoItensResponseSchema(BaseModel):
 
     id: int
     pregaoID: int
-    usuarioID: int
-    descricao: str
+    criadoPor: int
+    itemID: int
     unidade: str
     quantidade: float
     criadoEm: datetime 
