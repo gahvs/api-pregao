@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Body, Depends
-from typing import List
+from fastapi import APIRouter, Depends
 from . import logic
 from . import schemas
 
 router = APIRouter(
     prefix="/solicitacoes",
-    tags=["SOLICITACOES"]
+    tags=["Solicitacoes"]
 )
 
 @router.get("/{solicitacao_id}", response_model=schemas.SolicitacoesResponseSchema)
