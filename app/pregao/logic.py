@@ -1,11 +1,11 @@
 from fastapi import Depends, HTTPException
 from database.instance import get_db
 from sqlalchemy.orm import Session
-from models import pregao as models
-from schemas import pregao as schemas
 from utils import errors
 from typing import List
-from . import user
+from user.logic import UserLogic
+from . import models
+from . import schemas
 
 
 class PregaoLogic:
@@ -18,8 +18,7 @@ class PregaoLogic:
     PREGAO_AUTHORIZED_STATUS = 'AUTORIZADO'
     PREGAO_REJECTED_STATUS = 'REJEITADO'
 
-
-    def __init__(self, db: Session = Depends(get_db), user_logic: user.UserLogic = Depends(user.UserLogic)) -> None:
+    def __init__(self, db: Session = Depends(get_db), user_logic: UserLogic = Depends(UserLogic)) -> None:
         self.db: Session = db
         self.user_logic = user_logic
 
@@ -89,7 +88,7 @@ class PregaoParticipanteLogic:
     def __init__(self, 
                  db: Session = Depends(get_db), 
                  pregao_logic: PregaoLogic = Depends(PregaoLogic),
-                 user_logic: user.UserLogic = Depends(user.UserLogic)
+                 user_logic: UserLogic = Depends(UserLogic)
         ) -> None:
 
         self.db: Session = db

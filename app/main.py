@@ -1,9 +1,9 @@
 from fastapi import FastAPI
-from routers import pregao
+import pregao.routes
 
 app = FastAPI()
 
-app.include_router(pregao.router)
+app.include_router(pregao.routes.router)
 
 @app.get("/")
 def root():
