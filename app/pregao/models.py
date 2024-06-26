@@ -4,7 +4,7 @@ from datetime import datetime
 
 class PregaoModel(Base):
 
-    __tablename__  = "PREGAO"
+    __tablename__  = "PREGAO_PREGOES"
 
     id = Column(BigInteger, primary_key=True, index=True)
     descricao = Column(String)
@@ -16,7 +16,7 @@ class PregaoModel(Base):
 
 class PregaoParticipantesModel(Base):
 
-    __tablename__ = "PREGAO_PARTICIPANTES"
+    __tablename__ = "PREGAO_PREGOES_PARTICIPANTES"
 
     id = Column(BigInteger, primary_key=True, index=True)
     pregaoID = Column(BigInteger)
@@ -26,12 +26,13 @@ class PregaoParticipantesModel(Base):
 
 class PregaoDemandasModel(Base):
 
-    __tablename__ = "PREGAO_DEMANDAS"
+    __tablename__ = "PREGAO_PREGOES_ITENS"
     
     id = Column(BigInteger, primary_key=True, index=True)
     pregaoID = Column(BigInteger)
-    usuarioID = Column(BigInteger)
+    criadoPor = Column(BigInteger)
     descricao = Column(String)
     quantidade = Column(Double)
     unidade = Column(String)
     criadoEm = Column(DateTime, default=datetime.now().isoformat())
+    criadoEm = Column(DateTime, onupdate=datetime.now().isoformat())

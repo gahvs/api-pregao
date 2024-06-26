@@ -4,7 +4,7 @@ from . import logic
 from . import schemas
 
 router = APIRouter(
-    prefix="/pregao",
+    prefix="/pregoes",
     tags=["Pregao"]
 )
 

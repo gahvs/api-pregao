@@ -1,12 +1,10 @@
 from fastapi import FastAPI
+
+# Routers
 import pregao.routes
+import solicitacoes.routes
 
 app = FastAPI()
 
 app.include_router(pregao.routes.router)
-
-@app.get("/")
-def root():
-    return {
-        "message": "API is running!"
-    }
+app.include_router(solicitacoes.routes.router)

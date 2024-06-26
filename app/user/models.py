@@ -3,7 +3,7 @@ from database.instance import Base
 
 class UserModel(Base):
 
-    __tablename__  = "USUARIO"
+    __tablename__  = "USUARIOS"
 
     id = Column(BigInteger, primary_key=True, index=True)
     email = Column(String)
