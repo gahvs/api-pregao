@@ -9,16 +9,6 @@ router = APIRouter(
 )
 
 
-@router.get("/{item_id}", response_model=schemas.ItensSchema)
-def get_item_by_id(item_id: int, logic: logic.ItensLogic = Depends()):
-    item = logic.get_item_by_id(item_id=item_id)
-    return schemas.ItensSchema.model_validate(item)
-
-@router.get("/", response_model=List[schemas.ItensSchema])
-def get_all_itens(logic: logic.ItensLogic = Depends()):
-    itens = logic.get_all_itens()
-    return list(map(lambda i: schemas.ItensSchema.model_validate(i), itens))
-
 @router.get("/categorias/{categoria_id}", response_model=schemas.ItensCategoriasSchema)
 def get_categoria_by_id(categoria_id: int, logic: logic.ItensCategoriaLogic = Depends()):
     item = logic.get_categoria_by_id(categoria_id=categoria_id)
@@ -53,3 +43,13 @@ def get_marca_by_id(marca_id: int, logic: logic.ItensMarcasLogic = Depends()):
 def get_all_marcas(logic: logic.ItensMarcasLogic = Depends()):
     marcas = logic.get_all_marcas()
     return list(map(lambda m: schemas.ItensMarcasSchema.model_validate(m), marcas))
+
+@router.get("/{item_id}", response_model=schemas.ItensSchema)
+def get_item_by_id(item_id: int, logic: logic.ItensLogic = Depends()):
+    item = logic.get_item_by_id(item_id=item_id)
+    return schemas.ItensSchema.model_validate(item)
+
+@router.get("/", response_model=List[schemas.ItensSchema])
+def get_all_itens(logic: logic.ItensLogic = Depends()):
+    itens = logic.get_all_itens()
+    return list(map(lambda i: schemas.ItensSchema.model_validate(i), itens))
