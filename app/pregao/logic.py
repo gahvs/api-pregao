@@ -3,7 +3,7 @@ from database.instance import get_db
 from sqlalchemy.orm import Session
 from utils import errors
 from typing import List
-from user.logic import UserLogic
+from usuarios.logic import UserLogic
 from solicitacoes.logic import SolicitacaoItensLogic
 from solicitacoes.models import SolicitacoesItensModel
 from . import models

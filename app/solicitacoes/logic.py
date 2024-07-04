@@ -1,8 +1,8 @@
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from database.instance import get_db
-from user.logic import UserLogic
-from user.models import UserModel
+from usuarios.logic import UserLogic
+from usuarios.models import UserModel
 from itens.logic import ItensLogic
 from typing import List
 from . import models
