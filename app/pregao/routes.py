@@ -72,7 +72,3 @@ def get_pregao_demandas(pregao_id: int, logic: logic.PregaoItensLogic = Depends(
 def update_demanda_quantidade(demanda_id: int, body: schemas.PregaoItensUpdateQuantidadeSchema, logic: logic.PregaoItensLogic = Depends()):
     demanda = logic.update_demanda_quantidade(demanda_id=demanda_id, body=body)
     return schemas.PregaoItensResponseSchema.model_validate(demanda)
-
-# TODO:
-# Corrigir bug que irá disparar uma exceção quando o Logic do Pregao usar o Logic do Solicitacoes para pegar os itens de uma solicitacao sem itens
-# Deixar retornar exceção mesmo? ou seja só permitir conversão Solicitação -> Pregão quando a solicitação possuir itens? 
