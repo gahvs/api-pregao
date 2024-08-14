@@ -48,6 +48,11 @@ def create_solicitacao_comprador(solicitacao_id: int, body: schemas.Solicitacoes
     comprador = logic.create_solicitacao_comprador(solicitacao_id=solicitacao_id, body=body)
     return schemas.SolicitacoesCompradoresResponseSchema.model_validate(comprador)
 
+@router.get("/{solicitacao_id}/compradores", response_model=List[schemas.SolicitacoesCompradoresResponseSchema])
+def get_solicitacao_compradores(solicitacao_id:int, logic: logic.SolicitacaoCompradoresLogic = Depends()):
+    compradores = logic.get_compradores_by_solicitacao(solicitacao_id=solicitacao_id)
+    return list(map(lambda c: schemas.SolicitacoesCompradoresResponseSchema.model_validate(c), compradores))
+
 @router.delete("/compradores/{solicitacao_comprador_id}")
 def delete_solicitacao_comprador(solicitacao_comprador_id: int, logic: logic.SolicitacaoCompradoresLogic = Depends()):
     logic.remove_solicitacao_comprador(solicitacao_comprador_id=solicitacao_comprador_id)
@@ -57,6 +62,11 @@ def delete_solicitacao_comprador(solicitacao_comprador_id: int, logic: logic.Sol
 def create_solicitacao_fornecedor(solicitacao_id: int, body: schemas.SolicitacoesFornecedoresBodySchema, logic: logic.SolicitacaoFornecedoresLogic = Depends()):
     fornecedor = logic.create_solicitacao_fornecedor(solicitacao_id=solicitacao_id, body=body)
     return schemas.SolicitacoesFornecedoresResponseSchema.model_validate(fornecedor)
+
+@router.get("/{solicitacao_id}/fornecedores", response_model=List[schemas.SolicitacoesFornecedoresResponseSchema])
+def get_solicitacao_forncedores(solicitacao_id:int, logic: logic.SolicitacaoFornecedoresLogic = Depends()):
+    forncedores = logic.get_fornecedores_by_solicitacao(solicitacao_id=solicitacao_id)
+    return list(map(lambda f: schemas.SolicitacoesFornecedoresResponseSchema.model_validate(f), forncedores))
 
 @router.delete("/fornecedores/{solicitacao_fornecedor_id}")
 def delete_solicitacao_fornecedor(solicitacao_fornecedor_id: int, logic: logic.SolicitacaoFornecedoresLogic = Depends()):

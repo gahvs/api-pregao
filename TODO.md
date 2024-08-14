@@ -8,8 +8,9 @@
     - Criar classes *schemas* das entidades - ``DONE``
     - Criar classes *logic* para as entidades - ``DONE``
     - Implementar operações de adicionar e remover Compradores e Fornecedores - ``DONE``
-    - Implementar operações de listagem de Compradores e Fornecedores
-    - Definir os *handlers* e *endpoints* das operações
+    - Implementar operações de listagem de Compradores e Fornecedores  - ``DONE``
+    - Definir os *handlers* e *endpoints* das operações  - ``DONE``
+    - Implementar lógica para não permitir comprador e fornecedor na mesma solicitação (isso precisa ser validado com o time)
             
 ---
 

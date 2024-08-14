@@ -35,16 +35,6 @@ class SolicitacaoLogic:
         
         return solicitacao
     
-
-    def get_solicitacao_criador(self, criador_id: int) -> CompradoresModel | HTTPException:
-        
-        
-
-        if user is None:
-            raise HTTPException(status_code=404, detail=f"Não foi encontrado Usuário com ID: {criador_id}")
-        
-        return user
-    
     
     def create_solicitacao(self, body: schemas.SolicitacoesBodySchema) -> models.SolicitacoesModel | HTTPException:
 
@@ -133,6 +123,21 @@ class SolicitacaoCompradoresLogic:
 
         return comprador
 
+
+    def get_compradores_by_solicitacao(self, solicitacao_id: int) -> List[models.SolicitacoesCompradoresModel] | HTTPException:
+
+        solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
+
+        compradores: List[models.SolicitacoesCompradoresModel] = self.db.query(models.SolicitacoesCompradoresModel).filter(
+            models.SolicitacoesCompradoresModel.solicitacaoID == solicitacao.id
+        ).all()
+
+        if compradores == []:
+            raise HTTPException(status_code=204, detail=f"Não há compradores para a Solicitação {solicitacao_id}")
+        
+        return compradores
+    
+
     def create_solicitacao_comprador(self, solicitacao_id: int, body: schemas.SolicitacoesCompradoresBodySchema) -> models.SolicitacoesCompradoresModel | HTTPException:
 
         solicitacao_comprador = self.get_comprador_solicitacao_by_solicitacao_usuario(solicitacao_id=solicitacao_id, comprador_id=body.compradorID)
@@ -196,7 +201,7 @@ class SolicitacaoFornecedoresLogic:
     def get_solicitacao_fornecedor_by_solicitacao_usuario(self, solicitacao_id: int, fornecedor_id: int) -> models.SolicitacoesFornecedoresModel | HTTPException:
         
         solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
-        fornecedor = self.fornecedores_logic.get_fornecedor_by_id(fornecedor_id==fornecedor_id)
+        fornecedor = self.fornecedores_logic.get_fornecedor_by_id(fornecedor_id=fornecedor_id)
 
         fornecedor = self.db.query(models.SolicitacoesFornecedoresModel).filter(
             models.SolicitacoesFornecedoresModel.solicitacaoID==solicitacao.id,
@@ -204,6 +209,22 @@ class SolicitacaoFornecedoresLogic:
         ).first()
 
         return fornecedor
+    
+    
+    def get_fornecedores_by_solicitacao(self, solicitacao_id: int) -> List[models.SolicitacoesFornecedoresModel] | HTTPException:
+
+        solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
+
+        fornecedores: List[models.SolicitacoesFornecedoresModel] = self.db.query(models.SolicitacoesFornecedoresModel).filter(
+            models.SolicitacoesFornecedoresModel.solicitacaoID == solicitacao.id
+        ).all()
+
+        if fornecedores == []:
+            raise HTTPException(status_code=204, detail=f"Não há fornecedores para a Solicitação {solicitacao_id}")
+        
+        return fornecedores
+
+
 
     def create_solicitacao_fornecedor(self, solicitacao_id: int, body: schemas.SolicitacoesFornecedoresBodySchema) -> models.SolicitacoesFornecedoresModel | HTTPException:
 
