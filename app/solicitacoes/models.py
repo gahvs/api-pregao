@@ -28,3 +28,21 @@ class SolicitacoesItensModel(Base):
     projecaoQuantidade = Column(Double)
     criadoEm = Column(DateTime, default=func.now())
     atualizadoEm = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class SolicitacoesCompradoresModel(Base):
+
+    __tablename__ = "PREGAO_SOLICITACOES_COMPRADORES"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    solicitacaoID = Column(BigInteger)
+    compradorID = Column(BigInteger)
+    
+
+class SolicitacoesFornecedoresModel(Base):
+
+    __tablename__ = "PREGAO_SOLICITACOES_FORNECEDORES"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    solicitacaoID = Column(BigInteger)
+    fornecedorID = Column(BigInteger)

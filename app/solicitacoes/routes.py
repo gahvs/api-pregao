@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from typing import List
+from http import HTTPStatus
 from . import logic
 from . import schemas
 
@@ -41,3 +42,23 @@ def create_solicitacao_item(solicitacao_id: int, body: schemas.SolicitacoesItens
 def get_solicitacao_itens(solicitacao_id: int, logic: logic.SolicitacaoItensLogic = Depends()):
     itens = logic.get_solicitacao_itens(solicitacao_id=solicitacao_id)
     return list(map(lambda i: schemas.SolicitacoesItensResponseSchema.model_validate(i), itens))
+
+@router.post("/{solicitacao_id}/compradores", response_model=schemas.SolicitacoesCompradoresResponseSchema)
+def create_solicitacao_comprador(solicitacao_id: int, body: schemas.SolicitacoesCompradoresBodySchema, logic: logic.SolicitacaoCompradoresLogic = Depends()):
+    comprador = logic.create_solicitacao_comprador(solicitacao_id=solicitacao_id, body=body)
+    return schemas.SolicitacoesCompradoresResponseSchema.model_validate(comprador)
+
+@router.delete("/compradores/{solicitacao_comprador_id}")
+def delete_solicitacao_comprador(solicitacao_comprador_id: int, logic: logic.SolicitacaoCompradoresLogic = Depends()):
+    logic.remove_solicitacao_comprador(solicitacao_comprador_id=solicitacao_comprador_id)
+    return Response(status_code=HTTPStatus.NO_CONTENT)
+
+@router.post("/{solicitacao_id}/fornecedores", response_model=schemas.SolicitacoesFornecedoresResponseSchema)
+def create_solicitacao_fornecedor(solicitacao_id: int, body: schemas.SolicitacoesFornecedoresBodySchema, logic: logic.SolicitacaoFornecedoresLogic = Depends()):
+    fornecedor = logic.create_solicitacao_fornecedor(solicitacao_id=solicitacao_id, body=body)
+    return schemas.SolicitacoesFornecedoresResponseSchema.model_validate(fornecedor)
+
+@router.delete("/fornecedores/{solicitacao_fornecedor_id}")
+def delete_solicitacao_fornecedor(solicitacao_fornecedor_id: int, logic: logic.SolicitacaoFornecedoresLogic = Depends()):
+    logic.remove_solicitacao_fornecedor(solicitacao_fornecedor_id=solicitacao_fornecedor_id)
+    return Response(status_code=HTTPStatus.NO_CONTENT)

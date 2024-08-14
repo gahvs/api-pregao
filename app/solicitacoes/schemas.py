@@ -62,3 +62,43 @@ class SolicitacoesItensResponseSchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
+
+class SolicitacoesCompradoresBodySchema(BaseModel):
+
+    compradorID: int
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
+class SolicitacoesCompradoresResponseSchema(BaseModel):
+
+    id: int
+    solicitacaoID: int
+    compradorID: int
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
+class SolicitacoesFornecedoresResponseSchema(BaseModel):
+
+    id: int
+    solicitacaoID: int
+    fornecedorID: int
+        
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
+class SolicitacoesFornecedoresBodySchema(BaseModel):
+
+    fornecedorID: int
+
+    class Config:
+        orm_mode = True
+        from_attributes = True

@@ -113,8 +113,6 @@ class PregaoParticipanteLogic:
 
     def get_participante_by_pregao_usuario(self, pregao_id: int, usuario_id: int) -> models.PregaoParticipantesModel | HTTPException:
         self.validate(pregao_id=pregao_id, usuario_id=usuario_id)
-        print("pregao_id:", pregao_id)
-        print("usuario_id:",usuario_id)
 
         return self.db.query(models.PregaoParticipantesModel).filter(
             models.PregaoParticipantesModel.pregaoID == pregao_id,

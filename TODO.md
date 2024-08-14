@@ -4,10 +4,11 @@
 - ``EM ANDAMENTO`` Criar lógica de participantes da Solicitação, criando as entidades: ``PREGOES_SOLICITACOES_COMPRADORES`` & ``PREGOES_SOLICITACOES_FORNECEDORES``
 **Tarefas**: 
     - Criar novas entidades no banco de dados seguindo estrutura do Pregão - ``DONE``
-    - Criar classes *model* das entidades
-    - Criar classes *schemas* das entidades
-    - Criar classes *logic* para as entidades
-    - Implementar operações de adicionar e remover Compradores e Fornecedores
+    - Criar classes *model* das entidades - ``DONE``
+    - Criar classes *schemas* das entidades - ``DONE``
+    - Criar classes *logic* para as entidades - ``DONE``
+    - Implementar operações de adicionar e remover Compradores e Fornecedores - ``DONE``
+    - Implementar operações de listagem de Compradores e Fornecedores
     - Definir os *handlers* e *endpoints* das operações
             
 ---
