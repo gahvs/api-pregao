@@ -104,3 +104,43 @@ class PregaoItensResponseSchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
+
+class PregaoCompradoresBodySchema(BaseModel):
+
+    compradorID: int
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
+class PregaoCompradoresResponseSchema(BaseModel):
+
+    id: int
+    solicitacaoID: int
+    compradorID: int
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
+class PregaoFornecedoresResponseSchema(BaseModel):
+
+    id: int
+    solicitacaoID: int
+    fornecedorID: int
+        
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
+class PregaoFornecedoresBodySchema(BaseModel):
+
+    fornecedorID: int
+
+    class Config:
+        orm_mode = True
+        from_attributes = True        

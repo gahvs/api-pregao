@@ -18,15 +18,6 @@ class PregaoModel(Base):
     abertoADemandasEm = Column(DateTime)
     abertoADemandasAte = Column(DateTime)
 
-class PregaoParticipantesModel(Base):
-
-    __tablename__ = "PREGAO_PREGOES_PARTICIPANTES"
-
-    id = Column(BigInteger, primary_key=True, index=True)
-    pregaoID = Column(BigInteger)
-    usuarioID = Column(BigInteger)
-    tipoParticipante = Column(String)
-
 
 class PregaoItensModel(Base):
 
@@ -40,3 +31,20 @@ class PregaoItensModel(Base):
     unidade = Column(String)
     criadoEm = Column(DateTime, default=func.now())
     atualizadoEm = Column(DateTime, default=func.now(), onupdate=func.now())
+
+class PregaoCompradoresModel(Base):
+
+    __tablename__ = "PREGAO_PREGOES_COMPRADORES"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    solicitacaoID = Column(BigInteger)
+    compradorID = Column(BigInteger)
+    
+
+class PregaoFornecedoresModel(Base):
+
+    __tablename__ = "PREGAO_PREGOES_FORNECEDORES"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    solicitacaoID = Column(BigInteger)
+    fornecedorID = Column(BigInteger)
