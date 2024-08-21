@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from typing import List
+from http import HTTPStatus
 from . import logic
 from . import schemas
 
@@ -37,38 +38,17 @@ def reject_pregao(pregao_id: int,  logic: logic.PregaoLogic = Depends()):
     pregao = logic.reject_pregao(pregao_id=pregao_id)
     return schemas.PregaoSchema.model_validate(pregao)
 
-
-@router.post("/{pregao_id}/fornecedor", response_model=schemas.PregaoParticipantesResponseSchema)
-def create_pregao_fornecedor(pregao_id: int, body: schemas.PregaoParticipanteSchema, logic: logic.PregaoParticipanteLogic = Depends()):
-    fornecedor = logic.create_fornecedor(body=body, pregao_id=pregao_id)
-    return schemas.PregaoParticipantesResponseSchema.model_validate(fornecedor)
-
-
-@router.post("/{pregao_id}/demandante", response_model=schemas.PregaoParticipantesResponseSchema)
-def create_pregao_demandante(pregao_id: int, body: schemas.PregaoParticipanteSchema, logic: logic.PregaoParticipanteLogic = Depends()):
-    demandante = logic.create_demandante(body=body, pregao_id=pregao_id)
-    return schemas.PregaoParticipantesResponseSchema.model_validate(demandante)
-
-
-@router.get("/{pregao_id}/participantes", response_model=List[schemas.PregaoParticipantesResponseSchema])
-def get_pregao_participantes(pregao_id: int, logic: logic.PregaoParticipanteLogic = Depends()):
+@router.get("/{pregao_id}/participantes", response_model=List[schemas.PregaoParticipanteResponseSchema])
+def get_pregao_participantes(pregao_id: int, logic: logic.PregaoParticipantesLogic = Depends()):
     participantes = logic.get_pregao_participantes(pregao_id=pregao_id)
-    return list(map(lambda p: schemas.PregaoParticipantesResponseSchema.model_validate(p), participantes))
+    return map(lambda p: schemas.PregaoParticipanteResponseSchema.model_validate(p), participantes)
 
+@router.post("/{pregao_id}/comprador/novo", response_model=schemas.PregaoParticipanteResponseSchema)
+def create_pregao_comprador(pregao_id: int, body: schemas.PregaoParticipanteBodySchema, logic: logic.PregaoParticipantesLogic = Depends()):
+    comprador = logic.create_pregao_participante_comprador(pregao_id=pregao_id, body=body)
+    return schemas.PregaoParticipanteResponseSchema.model_validate(comprador)
 
-@router.post("/{pregao_id}/demanda", response_model=schemas.PregaoItensResponseSchema)
-def create_pregao_demanda(pregao_id: int, body: schemas.PregaoItensSchema, logic: logic.PregaoItensLogic = Depends()):
-    demanda = logic.create_pregao_demanda(pregao_id=pregao_id, body=body)
-    return schemas.PregaoItensResponseSchema.model_validate(demanda)
-
-
-@router.get("/{pregao_id}/demandas", response_model=List[schemas.PregaoItensResponseSchema])
-def get_pregao_demandas(pregao_id: int, logic: logic.PregaoItensLogic = Depends()):
-    demandas = logic.get_pregao_demandas(pregao_id=pregao_id)
-    return list(map(lambda d: schemas.PregaoItensResponseSchema.model_validate(d), demandas))
-
-
-@router.put("/demanda/{demanda_id}/alterar/quantidade", response_model=schemas.PregaoItensResponseSchema)
-def update_demanda_quantidade(demanda_id: int, body: schemas.PregaoItensUpdateQuantidadeSchema, logic: logic.PregaoItensLogic = Depends()):
-    demanda = logic.update_demanda_quantidade(demanda_id=demanda_id, body=body)
-    return schemas.PregaoItensResponseSchema.model_validate(demanda)
+@router.post("/{pregao_id}/fornecedor/novo", response_model=schemas.PregaoParticipanteResponseSchema)
+def create_pregao_fornecedor(pregao_id: int, body: schemas.PregaoParticipanteBodySchema, logic: logic.PregaoParticipantesLogic = Depends()):
+    fornecedor = logic.create_pregao_participante_fornecedor(pregao_id=pregao_id, body=body)
+    return schemas.PregaoParticipanteResponseSchema.model_validate(fornecedor)

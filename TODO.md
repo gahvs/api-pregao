@@ -1,6 +1,9 @@
 # Principais Atualizações:
 
 
+## SOLICITACAO:
+- ``PARA FAZER`` Refazer lógica de participantes das Solicitações de Pregão - Copiar o que foi feito no Pregão
+
 ## PREGAO:
 
 - ``EM ANDAMENTO`` Refazer lógica de participantes do Pregao, hoje a API trabalha com a tabela ``PREGAO_PARTICIPANTES``, mas o Banco foi atualizado com duas novas entidades: ``PREGOES_PREGAO_COMPRADORES`` & ``PREGOES_PREGAO_FORNECEDORES``.

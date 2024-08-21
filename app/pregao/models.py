@@ -1,6 +1,6 @@
 from sqlalchemy import Column, BigInteger, String, DateTime, Double, func
 from database.instance import Base
-from datetime import datetime
+
 
 class PregaoModel(Base):
 
@@ -32,19 +32,13 @@ class PregaoItensModel(Base):
     criadoEm = Column(DateTime, default=func.now())
     atualizadoEm = Column(DateTime, default=func.now(), onupdate=func.now())
 
-class PregaoCompradoresModel(Base):
 
-    __tablename__ = "PREGAO_PREGOES_COMPRADORES"
+class PregaoParticipantesModel(Base):
 
-    id = Column(BigInteger, primary_key=True, index=True)
-    solicitacaoID = Column(BigInteger)
-    compradorID = Column(BigInteger)
-    
-
-class PregaoFornecedoresModel(Base):
-
-    __tablename__ = "PREGAO_PREGOES_FORNECEDORES"
+    __tablename__ = "PREGAO_PREGOES_PARTICIPANTES"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    solicitacaoID = Column(BigInteger)
-    fornecedorID = Column(BigInteger)
+    pregaoID = Column(BigInteger)
+    usuarioID = Column(BigInteger)
+    participanteID = Column(BigInteger)
+    participanteTipo = Column(String)

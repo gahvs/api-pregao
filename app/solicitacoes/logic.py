@@ -91,13 +91,13 @@ class SolicitacaoCompradoresLogic:
 
     def __init__(self,
                  db: Session = Depends(get_db),
-                 solicitaco_logic: SolicitacaoLogic = Depends(SolicitacaoLogic),
+                 solicitacao_logic: SolicitacaoLogic = Depends(SolicitacaoLogic),
                  compradores_logic: CompradoresLogic = Depends(CompradoresLogic)
             ) -> None:
         
         self.db: Session = db
         self.compradores_logic: CompradoresLogic = compradores_logic
-        self.solicitacao_logic: SolicitacaoLogic = solicitaco_logic
+        self.solicitacao_logic: SolicitacaoLogic = solicitacao_logic
 
     def get_solicitacao_comprador_by_id(self, solicitacao_comprador_id: int) -> models.SolicitacoesCompradoresModel | HTTPException:
 
