@@ -1,10 +1,10 @@
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import Union, List
 from database.instance import get_db
 from itens.logic import ItensCategoriaLogic
 from itens.models import ItensCategoriasModel
 from utils import errors
-from typing import Union, List
 from . import models
 from . import schemas
 
@@ -27,239 +27,146 @@ class UserLogic:
         return user
     
 
-class CompradoresLogic:
+class UsuarioInteresses: 
+
     '''
-        Realiza ações que tem como contexto a tabela COMPRADORES
-    '''
-
-    def __init__(self,
-            db: Session = Depends(get_db),
-            user_logic: UserLogic = Depends(UserLogic),
-            itens_categoria_logic: ItensCategoriaLogic = Depends(ItensCategoriaLogic)
-            ) -> None:
-        
-        self.db: Session = db
-        self.user_logic: UserLogic = user_logic
-        self.itens_categoria_logic: ItensCategoriaLogic = itens_categoria_logic
-
-    def usuario_has_comprador_profile(self, usuario_id: int) -> bool:
-
-        comprador: models.CompradoresModel = self.db.query(models.CompradoresModel).filter(
-            models.CompradoresModel.usuarioID == usuario_id
-        ).first()
-
-        return comprador != None
-
-
-    def interesse_already_setted(self, comprador_id: int, categoria_id: int) -> bool:
-
-        interesse: models.CompradoresInteressesModel = self.db.query(models.CompradoresInteressesModel).filter(
-            models.CompradoresInteressesModel.compradorID == comprador_id,
-            models.CompradoresInteressesModel.categoriaID == categoria_id
-        ).first()
-
-        return interesse != None
-
-
-    def get_comprador_by_id(self, comprador_id: int) -> models.CompradoresModel | HTTPException:
-
-        comprador: models.CompradoresModel = self.db.query(models.CompradoresModel).filter(
-            models.CompradoresModel.id == comprador_id
-        ).first()
-
-        if comprador == None:
-            raise HTTPException(status_code=404, detail=f"Não foi encontrador Comprador com o ID {comprador_id}")
-
-        return comprador
-    
-
-    def get_comprador_by_usuario_id(self, usuario_id: int) -> models.CompradoresModel | HTTPException:
-
-        comprador: models.CompradoresModel = self.db.query(models.CompradoresModel).filter(
-            models.CompradoresModel.usuarioID == usuario_id
-        ).first()
-
-        if comprador == None:
-            raise HTTPException(status_code=404, detail=f"Não existe Perfil Comprador para o Usuário {usuario_id}")
-
-        return comprador
-    
-
-    def create_comprador(self, body: schemas.CompradorCreateSchema) -> models.CompradoresModel | HTTPException:
-
-        if self.usuario_has_comprador_profile(body.usuarioID):
-            raise HTTPException(status_code=409, detail=f"Usuário {body.usuarioID} já possui perfil Comprador") 
-
-        usuario: models.UserModel = self.user_logic.get_user_by_id(user_id=body.usuarioID)
-
-        comprador: models.CompradoresModel = models.CompradoresModel(
-            nome=body.nome,
-            cpf=body.cpf,
-            usuarioID=usuario.id
-        )
-
-        self.db.add(comprador)
-        self.db.commit()
-        self.db.refresh(comprador)
-
-        return comprador
-    
-
-    def set_comprador_interesse(self, 
-            comprador_id: int, 
-            categoria_id: int
-        ) -> Union[models.CompradoresInteressesModel, ItensCategoriasModel] | HTTPException:
-    
-        if self.interesse_already_setted(comprador_id=comprador_id, categoria_id=categoria_id):
-            raise HTTPException(status_code=409, detail=f"Interesse na Categoria {categoria_id} já definido para o Comprador {comprador_id}")
-
-        comprador: models.CompradoresModel = self.get_comprador_by_id(comprador_id=comprador_id)
-        categoria: ItensCategoriasModel = self.itens_categoria_logic.get_categoria_by_id(categoria_id=categoria_id)
-
-        interesse: models.CompradoresInteressesModel = models.CompradoresInteressesModel(
-            compradorID=comprador.id,
-            categoriaID=categoria.id
-        )
-
-        self.db.add(interesse)
-        self.db.commit()
-        self.db.refresh(interesse)
-
-        return comprador, categoria
-    
-
-    def get_comprador_interesses(self, comprador_id: int) -> List[ItensCategoriasModel] | HTTPException:
-        
-        comprador: models.CompradoresModel = self.get_comprador_by_id(comprador_id=comprador_id)
-
-        interesses: List[models.CompradoresInteressesModel] = self.db.query(models.CompradoresInteressesModel).filter(
-            models.CompradoresInteressesModel.compradorID == comprador.id
-        ).all()
-
-        if interesses == []:
-            raise HTTPException(status_code=204, detail=f"Comprador {comprador.id} não possui interesses registrados")
-        
-        categorias: List[ItensCategoriasModel] = list(
-            map(lambda interesse: self.itens_categoria_logic.get_categoria_by_id(categoria_id=interesse.categoriaID), interesses)
-        )
-
-        return categorias
-
-
-
-class FornecedoresLogic:
-    '''
-        Realiza ações que tem como contexto a tabela FORNECEDORES
+        Realiza operações com as entidades USUARIOS_INTERESSES_COMPRA e USUARIOS_INTERESSES_VENDA.
+        Principais operações:
+        - Registro de Interesse de Compra
+        - Registro de Interesse de Venda
+        - Listagem de Interesses de Compra
+        - Listagem dos Interesses de Venda
+        - Remoção de Interesse de Compra
+        - Remoção de Interesse de Venda
     '''
 
     def __init__(self,
-            db: Session = Depends(get_db),
-            user_logic: UserLogic = Depends(UserLogic),
-            itens_categoria_logic: ItensCategoriaLogic = Depends(ItensCategoriaLogic)
-            ) -> None:
+                 db: Session = Depends(get_db),
+                 user_logic: UserLogic = Depends(UserLogic),
+                 categoria_logic: ItensCategoriaLogic = Depends(ItensCategoriaLogic)
+                 ) -> None:
         
         self.db: Session = db
         self.user_logic: UserLogic = user_logic
-        self.itens_categoria_logic: ItensCategoriaLogic = itens_categoria_logic
-        
+        self.categoria_logic: ItensCategoriaLogic = categoria_logic
 
-    def usuario_has_fornecedor_profile(self, usuario_id: int) -> bool:
-        fornecedor: models.FornecedoresModel = self.db.query(models.FornecedoresModel).filter(
-            models.FornecedoresModel.usuarioID == usuario_id
-        ).first()
-        
-        return fornecedor != None
+    def get_interesse_compra_using_usuario_categoria(self, usuario_id: int, categoria_id: int) -> models.UsuarioInteressesCompra | HTTPException:
 
-
-    def interesse_already_setted(self, fornecedor_id: int, categoria_id: int) -> bool:
-
-        interesse: models.FornecedoresInteressesModel = self.db.query(models.FornecedoresInteressesModel).filter(
-            models.FornecedoresInteressesModel.fornecedorID == fornecedor_id,
-            models.FornecedoresInteressesModel.categoriaID == categoria_id
+        interesse_compra = self.db.query(models.UsuarioInteressesCompra).filter(
+            models.UsuarioInteressesCompra.usuarioID==usuario_id,
+            models.UsuarioInteressesCompra.categoriaID==categoria_id
         ).first()
 
-        return interesse != None
+        if interesse_compra == None:
+            raise HTTPException(status_code=404, detail=f"Não há interesse de compra definido para o Usuário {usuario_id} e Categoria {categoria_id}")
+
+        return interesse_compra 
 
 
-    def get_fornecedor_by_id(self, fornecedor_id: int) -> models.FornecedoresModel | HTTPException:
+    def get_interesse_venda_using_usuario_categoria(self, usuario_id: int, categoria_id: int) -> models.UsuarioInteressesVenda | HTTPException:
 
-        fornecedor: models.FornecedoresModel = self.db.query(models.FornecedoresModel).filter(
-            models.FornecedoresModel.id == fornecedor_id
+        interesse_compra = self.db.query(models.UsuarioInteressesVenda).filter(
+            models.UsuarioInteressesVenda.usuarioID==usuario_id,
+            models.UsuarioInteressesVenda.categoriaID==categoria_id
         ).first()
 
-        if fornecedor is None:
-            raise HTTPException(status_code=404, detail=f"Não foi encontrado Fornecedor com o ID {fornecedor_id}")
-        
-        return fornecedor
+        if interesse_compra == None:
+            raise HTTPException(status_code=404, detail=f"Não há interesse de venda definido para o Usuário {usuario_id} e Categoria {categoria_id}")
+
+        return interesse_compra 
     
 
-    def get_fornecedor_by_usuario_id(self, usuario_id: int) -> models.FornecedoresModel | HTTPException:
+    def interesse_compra_already_setted(self, usuario_id: int, categoria_id: int) -> bool:
 
-        fornecedor: models.FornecedoresModel = self.db.query(models.FornecedoresModel).filter(
-            models.FornecedoresModel.usuarioID == usuario_id
+        interesse_compra = self.db.query(models.UsuarioInteressesCompra).filter(
+            models.UsuarioInteressesCompra.usuarioID==usuario_id,
+            models.UsuarioInteressesCompra.categoriaID==categoria_id
         ).first()
 
-        if fornecedor == None:
-            raise HTTPException(status_code=404, detail=f"Não existe Perfil Comprador para o Usuário {usuario_id}")
-
-        return fornecedor
-
-    def create_fornecedor(self, body: schemas.FornecedorCreateSchema) -> models.FornecedoresModel | HTTPException:
-
-        if self.usuario_has_fornecedor_profile(usuario_id=body.usuarioID):
-            raise HTTPException(status_code=409, detail=f"Usuário {body.usuarioID} já possui perfil Fornecedor")
-
-        usuario: models.UserModel = self.user_logic.get_user_by_id(user_id=body.usuarioID)
-
-        fornecedor: models.FornecedoresModel = models.FornecedoresModel(
-            nomeEmpresa=body.nomeEmpresa,
-            cnpj=body.cnpj,
-            usuarioID=usuario.id
-        )
-
-        self.db.add(fornecedor)
-        self.db.commit()
-        self.db.refresh(fornecedor)
-
-        return fornecedor
+        return interesse_compra != None
     
     
-    def set_fornecedor_interesse(self, 
-            fornecedor_id: int, 
-            categoria_id: int,
-        ) -> Union[models.FornecedoresModel, ItensCategoriasModel] | HTTPException:
-        
-        if self.interesse_already_setted(fornecedor_id=fornecedor_id, categoria_id=categoria_id):
-            raise HTTPException(status_code=409, detail=f"Interesse na categoria {categoria_id} já definido para o Fornecedor {fornecedor_id}")
+    def interesse_venda_already_setted(self, usuario_id: int, categoria_id: int) -> bool:
 
-        fornecedor: models.FornecedoresModel = self.get_fornecedor_by_id(fornecedor_id=fornecedor_id)
-        categoria: ItensCategoriasModel = self.itens_categoria_logic.get_categoria_by_id(categoria_id=categoria_id)
+        interesse_compra = self.db.query(models.UsuarioInteressesVenda).filter(
+            models.UsuarioInteressesVenda.usuarioID==usuario_id,
+            models.UsuarioInteressesVenda.categoriaID==categoria_id
+        ).first()
 
+        return interesse_compra != None
+    
 
-        interesse: models.FornecedoresInteressesModel = models.FornecedoresInteressesModel(
-            fornecedorID=fornecedor.id,
+    def create_interesse_compra(self, usuario_id: int, body: schemas.UsuarioInteresseBodySchema) -> models.UsuarioInteressesCompra | HTTPException:
+
+        if self.interesse_compra_already_setted(usuario_id=usuario_id, categoria_id=body.categoriaID):
+            return self.get_interesse_compra_using_usuario_categoria(usuario_id=usuario_id, categoria_id=body.categoriaID)
+
+        usuario = self.user_logic.get_user_by_id(user_id=usuario_id)
+        categoria = self.categoria_logic.get_categoria_by_id(categoria_id=body.categoriaID)
+
+        new_interesse_compra = models.UsuarioInteressesCompra(
+            usuarioID=usuario.id,
             categoriaID=categoria.id
         )
 
-        self.db.add(interesse)
+        self.db.add(new_interesse_compra)
         self.db.commit()
-        self.db.refresh(interesse)
+        self.db.refresh(new_interesse_compra)
 
-        return fornecedor, categoria
+        return new_interesse_compra
     
 
-    def get_fornecedor_interesses(self, fornecedor_id: int) -> List[ItensCategoriasModel] | HTTPException:
+    def create_interesse_venda(self, usuario_id: int, body: schemas.UsuarioInteresseBodySchema) -> models.UsuarioInteressesVenda | HTTPException:
 
-        fornecedor: models.FornecedoresModel = self.get_fornecedor_by_id(fornecedor_id=fornecedor_id)
-        interesses: List[models.FornecedoresInteressesModel] = self.db.query(models.FornecedoresInteressesModel).filter(
-            models.FornecedoresInteressesModel.fornecedorID == fornecedor.id
+        if self.interesse_venda_already_setted(usuario_id=usuario_id, categoria_id=body.categoriaID):
+            return self.get_interesse_venda_using_usuario_categoria(usuario_id=usuario_id, categoria_id=body.categoriaID)
+
+        usuario = self.user_logic.get_user_by_id(user_id=usuario_id)
+        categoria = self.categoria_logic.get_categoria_by_id(categoria_id=body.categoriaID)
+
+        new_interesse_venda = models.UsuarioInteressesVenda(
+            usuarioID=usuario.id,
+            categoriaID=categoria.id
+        )
+
+        self.db.add(new_interesse_venda)
+        self.db.commit()
+        self.db.refresh(new_interesse_venda)
+
+        return new_interesse_venda
+    
+
+    def get_usuario_interesses_compra(self, usuario_id: int) -> List[ItensCategoriasModel] | HTTPException:
+
+        usuario = self.user_logic.get_user_by_id(user_id=usuario_id)
+
+        interesses_compra = self.db.query(models.UsuarioInteressesCompra).filter(
+            models.UsuarioInteressesCompra.usuarioID==usuario.id
         ).all()
 
-        if interesses == []:
-            raise HTTPException(status_code=204, detail=f"O Fornecedor {fornecedor.id} não possui interesses definidos")
-        
-        categorias: List[ItensCategoriasModel] = list(map(
-            lambda interesse: self.itens_categoria_logic.get_categoria_by_id(categoria_id=interesse.categoriaID), interesses
-        ))
+        if interesses_compra == []:
+            raise HTTPException(status_code=204, detail=f"Usuário {usuario_id} não possui interesses de compra")
 
-        return categorias
+        categorias_interesse = map(
+            lambda i: self.categoria_logic.get_categoria_by_id(categoria_id=i.categoriaID), interesses_compra
+        )
+
+        return categorias_interesse
+    
+
+    def get_usuario_interesses_venda(self, usuario_id: int) -> List[ItensCategoriasModel] | HTTPException:
+
+        usuario = self.user_logic.get_user_by_id(user_id=usuario_id)
+
+        interesses_compra = self.db.query(models.UsuarioInteressesVenda).filter(
+            models.UsuarioInteressesVenda.usuarioID==usuario.id
+        ).all()
+
+        if interesses_compra == []:
+            raise HTTPException(status_code=204, detail=f"Usuário {usuario_id} não possui interesses de compra")
+
+        categorias_interesse = map(
+            lambda i: self.categoria_logic.get_categoria_by_id(categoria_id=i.categoriaID), interesses_compra
+        )
+
+        return categorias_interesse

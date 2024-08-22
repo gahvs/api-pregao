@@ -10,39 +10,19 @@ class UserModel(Base):
     nome = Column(String)
 
 
-class CompradoresModel(Base):
+class UsuarioInteressesCompra(Base):
 
-    __tablename__ = "COMPRADORES"
+    __tablename__ = "USUARIOS_INTERESSES_COMPRA"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    nome = Column(String)
-    cpf = Column(String)
     usuarioID = Column(BigInteger)
-
-
-class FornecedoresModel(Base):
-
-    __tablename__ = "FORNECEDORES"
-
-    id = Column(BigInteger, primary_key=True, index=True)
-    nomeEmpresa = Column(String)
-    cnpj = Column(String)
-    usuarioID = Column(BigInteger)
-
-
-class CompradoresInteressesModel(Base):
-
-    __tablename__ = "COMPRADORES_INTERESSES"
-
-    id = Column(BigInteger, primary_key=True, index=True)
-    compradorID = Column(BigInteger)
     categoriaID = Column(BigInteger)
 
 
-class FornecedoresInteressesModel(Base):
+class UsuarioInteressesVenda(Base):
 
-    __tablename__ = "FORNECEDORES_INTERESSES"
+    __tablename__ = "USUARIOS_INTERESSES_VENDA"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    fornecedorID = Column(BigInteger)
+    usuarioID = Column(BigInteger)
     categoriaID = Column(BigInteger)

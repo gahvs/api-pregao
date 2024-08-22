@@ -40,5 +40,4 @@ class PregaoParticipantesModel(Base):
     id = Column(BigInteger, primary_key=True, index=True)
     pregaoID = Column(BigInteger)
     usuarioID = Column(BigInteger)
-    participanteID = Column(BigInteger)
     participanteTipo = Column(String)

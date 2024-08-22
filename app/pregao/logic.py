@@ -3,8 +3,8 @@ from database.instance import get_db
 from sqlalchemy.orm import Session
 from utils import errors
 from typing import List
-from usuarios.logic import UserLogic, CompradoresLogic, FornecedoresLogic
-from usuarios.models import UserModel, CompradoresModel, FornecedoresModel
+from usuarios.logic import UserLogic
+from usuarios.models import UserModel
 from solicitacoes.logic import SolicitacaoItensLogic
 from . import models
 from . import schemas
@@ -106,16 +106,12 @@ class PregaoParticipantesLogic:
     def __init__(self,
                  db: Session = Depends(get_db),
                  user_logic: UserLogic = Depends(UserLogic),
-                 pregao_logic: PregaoLogic = Depends(PregaoLogic),
-                 compradores_logic: CompradoresLogic = Depends(CompradoresLogic),
-                 fornecedores_logic: FornecedoresLogic = Depends(FornecedoresLogic)
+                 pregao_logic: PregaoLogic = Depends(PregaoLogic)
                 ) -> None:
         
         self.db: Session = db
         self.user_logic: UserLogic = user_logic
         self.pregao_logic: PregaoLogic = pregao_logic
-        self.compradores_logic: CompradoresLogic = compradores_logic
-        self.fornecedores_logic: FornecedoresLogic = fornecedores_logic
 
 
     def get_pregao_participantes(self, pregao_id: int) -> List[models.PregaoParticipantesModel] | HTTPException:
@@ -154,7 +150,7 @@ class PregaoParticipantesLogic:
         return participante != None
 
 
-    def create_pregao_participante(self, pregao_id: int, usuario_id: int, participante_id: int, participante_tipo: str) -> models.PregaoParticipantesModel | HTTPException:
+    def create_pregao_participante(self, pregao_id: int, usuario_id: int, participante_tipo: str) -> models.PregaoParticipantesModel | HTTPException:
 
         if self.participante_already_setted(pregao_id=pregao_id, usuario_id=usuario_id):
 
@@ -171,7 +167,6 @@ class PregaoParticipantesLogic:
         new_pregao_participante = models.PregaoParticipantesModel(
             pregaoID=pregao.id,
             usuarioID=usuario.id,
-            participanteID=participante_id,
             participanteTipo=participante_tipo
         )
 
@@ -183,10 +178,8 @@ class PregaoParticipantesLogic:
     
 
     def create_pregao_participante_comprador(self, pregao_id: int, body: schemas.PregaoParticipanteBodySchema) -> models.PregaoParticipantesModel | HTTPException:
-        comprador: CompradoresModel = self.compradores_logic.get_comprador_by_usuario_id(usuario_id=body.usuarioID)
-        return self.create_pregao_participante(pregao_id=pregao_id, usuario_id=body.usuarioID, participante_id=comprador.id, participante_tipo=self.PARTICIPANTE_COMPRADOR_TIPO)
+        return self.create_pregao_participante(pregao_id=pregao_id, usuario_id=body.usuarioID, participante_tipo=self.PARTICIPANTE_COMPRADOR_TIPO)
 
 
     def create_pregao_participante_fornecedor(self, pregao_id: int, body: schemas.PregaoParticipanteBodySchema) -> models.PregaoParticipantesModel | HTTPException:
-        fornecedor: FornecedoresModel = self.fornecedores_logic.get_fornecedor_by_usuario_id(usuario_id=body.usuarioID)
-        return self.create_pregao_participante(pregao_id=pregao_id, usuario_id=body.usuarioID, participante_id=fornecedor.id, participante_tipo=self.PARTICIPANTE_FORNECEDOR_TIPO)
+        return self.create_pregao_participante(pregao_id=pregao_id, usuario_id=body.usuarioID, participante_tipo=self.PARTICIPANTE_FORNECEDOR_TIPO)

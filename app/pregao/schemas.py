@@ -62,7 +62,6 @@ class PregaoParticipanteResponseSchema(BaseModel):
     id: int
     pregaoID: int
     usuarioID: int
-    participanteID: int
     participanteTipo: str
     
     class Config:
