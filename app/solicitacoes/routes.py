@@ -37,6 +37,16 @@ def create_solicitacao_item(solicitacao_id: int, body: schemas.SolicitacoesItens
     item = logic.create_solicitacao_item(solicitacao_id=solicitacao_id, body=body)
     return schemas.SolicitacoesItensResponseSchema.model_validate(item)
 
+@router.patch("/itens/{solicitacao_item_id}/alterar", response_model=schemas.SolicitacoesItensResponseSchema)
+def update_solicitacao_item(solicitacao_item_id: int, body: schemas.SolicitacoesItensBodyUpdateSchema, logic: logic.SolicitacaoItensLogic = Depends()):
+    item = logic.update_solicitacao_item(solicitacao_item_id=solicitacao_item_id, body=body)
+    return schemas.SolicitacoesItensResponseSchema.model_validate(item)
+
+@router.delete("/itens/{solicitacao_item_id}/remover", response_model=schemas.SolicitacoesItensResponseSchema)
+def delete_solicitacao_item(solicitacao_item_id: int, logic: logic.SolicitacaoItensLogic = Depends()):
+    item_deleted = logic.delete_solicitacao_itens(solicitacao_item_id=solicitacao_item_id)
+    return schemas.SolicitacoesItensResponseSchema.model_validate(item_deleted)
+
 @router.get("/{solicitacao_id}/itens", response_model=List[schemas.SolicitacoesItensResponseSchema])
 def get_solicitacao_itens(solicitacao_id: int, logic: logic.SolicitacaoItensLogic = Depends()):
     itens = logic.get_solicitacao_itens(solicitacao_id=solicitacao_id)

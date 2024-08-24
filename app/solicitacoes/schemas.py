@@ -44,13 +44,24 @@ class SolicitacoesItensBodySchema(BaseModel):
     itemID: int
     unidade: str
     projecaoQuantidade: float
+    participanteID: int
         
     class Config:
         orm_mode = True
         from_attributes = True
 
+class SolicitacoesItensBodyUpdateSchema(BaseModel):
+
+    unidade: Optional[str] = None
+    projecaoQuantidade: Optional[float] = None
+        
+    class Config:
+        orm_mode = True
+        from_attributes = True        
+
 class SolicitacoesItensResponseSchema(BaseModel):
 
+    id: int
     solicitacaoID: int
     criadoPor: int
     itemID: int
@@ -58,6 +69,7 @@ class SolicitacoesItensResponseSchema(BaseModel):
     projecaoQuantidade: float
     criadoEm: datetime
     atualizadoEm: datetime
+    deleted: bool
 
     class Config:
         orm_mode = True

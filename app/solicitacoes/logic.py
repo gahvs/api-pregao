@@ -86,55 +86,7 @@ class SolicitacaoLogic:
         self.db.refresh(solicitacao)
 
         return solicitacao
-    
 
-class SolicitacaoItensLogic:
-    '''
-        Realiza ações que tem como contexto a tabela PREGAO_SOLICITACOES_ITENS
-    '''
-    
-    def __init__(self, 
-                 db: Session = Depends(get_db),
-                 solicitacao_logic: SolicitacaoLogic = Depends(SolicitacaoLogic),
-                 itens_logic: ItensLogic = Depends(ItensLogic)
-            ) -> None:
-        self.db: Session = db
-        self.itens_logic: ItensLogic = itens_logic
-        self.solicitacao_logic: SolicitacaoLogic = solicitacao_logic
-
-    
-    def create_solicitacao_item(self, solicitacao_id: int, body: schemas.SolicitacoesItensBodySchema) -> models.SolicitacoesItensModel | HTTPException:
-        
-        solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
-
-        item = models.SolicitacoesItensModel(
-            solicitacaoID=solicitacao.id,
-            criadoPor=solicitacao.criadoPor,
-            itemID=body.itemID,
-            unidade=body.unidade,
-            projecaoQuantidade=body.projecaoQuantidade,
-        )
-
-        self.db.add(item)
-        self.db.commit()
-        self.db.refresh(item)
-
-        return item
-    
-
-    def get_solicitacao_itens(self, solicitacao_id: int) -> List[models.SolicitacoesItensModel] | HTTPException:
-
-        solicitacao: models.SolicitacoesModel = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
-
-        itens: List[models.SolicitacoesItensModel] = self.db.query(models.SolicitacoesItensModel).filter(
-            models.SolicitacoesItensModel.solicitacaoID == solicitacao.id
-        ).all()
-
-        if itens == []:
-            raise HTTPException(status_code=204, detail=f"A solicitação {solicitacao_id} não tem itens cadastrados")
-        
-        return itens
-    
 
 class SolicitacaoParticipantesLogic:
 
@@ -253,3 +205,135 @@ class SolicitacaoParticipantesLogic:
         self.db.commit()
 
         return
+    
+    def participante_is_comprador(self, participante: models.SolicitacoesParticipantesModel) -> bool:
+        return participante.participanteTipo == self.PARTICIPANTE_COMPRADOR_TIPO
+    
+    
+class SolicitacaoItensLogic:
+    '''
+        Realiza operações envolvendo Solicitaçoes e Itens da Solicitação.
+        Principais operações:
+        - Listagem dos Itens da Solicitação
+        - Adicionar Itens à uma Solicitação
+        - Alterar Itens de uma Solicitação
+        - Remover Itens de uma Solicitação
+    '''
+    
+    def __init__(self, 
+                 db: Session = Depends(get_db),
+                 solicitacao_logic: SolicitacaoLogic = Depends(SolicitacaoLogic),
+                 participante_logic: SolicitacaoParticipantesLogic = Depends(SolicitacaoParticipantesLogic),
+                 itens_logic: ItensLogic = Depends(ItensLogic)
+            ) -> None:
+        self.db: Session = db
+        self.itens_logic: ItensLogic = itens_logic
+        self.solicitacao_logic: SolicitacaoLogic = solicitacao_logic
+        self.participante_logic: SolicitacaoParticipantesLogic = participante_logic
+
+
+    def get_solicitacao_item_by_id(self, solicitacao_item_id: int) -> models.SolicitacoesItensModel | HTTPException:
+
+        solicitacao_item = self.db.query(models.SolicitacoesItensModel).filter(
+            models.SolicitacoesItensModel.id==solicitacao_item_id
+        ).first()
+
+        if solicitacao_item == None:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Não existem Item de Solicitação com o ID {solicitacao_item_id}")
+        
+        return solicitacao_item
+
+    
+    def get_solicitacao_item_using_solicitacao_item(self, solicitacao_id: int, item_id: int) -> models.SolicitacoesItensModel | HTTPException:
+
+        solicitacao_item = self.db.query(models.SolicitacoesItensModel).filter(
+            models.SolicitacoesItensModel.solicitacaoID==solicitacao_id,
+            models.SolicitacoesItensModel.itemID==item_id
+        ).first()
+
+        if solicitacao_item == None:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"O Item {item_id} não foi adicionado à Solicitação {solicitacao_id}")
+        
+        return solicitacao_item
+
+
+    def solicitacao_item_already_added(self, solicitacao_id: int, item_id: int) -> bool:
+
+        solicitacao_item = self.db.query(models.SolicitacoesItensModel).filter(
+            models.SolicitacoesItensModel.solicitacaoID==solicitacao_id,
+            models.SolicitacoesItensModel.itemID==item_id
+        ).first()
+        
+        return solicitacao_item != None
+    
+
+    def create_solicitacao_item(self, solicitacao_id: int, body: schemas.SolicitacoesItensBodySchema) -> models.SolicitacoesItensModel | HTTPException:
+        
+        if self.solicitacao_item_already_added(solicitacao_id=solicitacao_id, item_id=body.itemID):
+            raise HTTPException(status_code=HTTPStatus.NOT_ACCEPTABLE, detail=f"O Item {body.itemID} já foi adicionado à Solicitação, se necessário altere-o")
+
+        solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
+        participante = self.participante_logic.get_participante_using_solicitacao_usuario(solicitacao_id=solicitacao_id, usuario_id=body.participanteID)
+
+        if not self.participante_logic.participante_is_comprador(participante=participante):
+            raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=f"Usuário não participa como Comprador da Solicitacao")
+
+        item = models.SolicitacoesItensModel(
+            solicitacaoID=solicitacao.id,
+            criadoPor=participante.id,
+            itemID=body.itemID,
+            unidade=body.unidade,
+            projecaoQuantidade=body.projecaoQuantidade,
+        )
+
+        self.db.add(item)
+        self.db.commit()
+        self.db.refresh(item)
+
+        return item
+    
+
+    def update_solicitacao_item(self, solicitacao_item_id: int, body: schemas.SolicitacoesItensBodyUpdateSchema) -> models.SolicitacoesItensModel | HTTPException:
+
+        solicitacao_item = self.get_solicitacao_item_by_id(solicitacao_item_id=solicitacao_item_id)
+        if solicitacao_item.deleted:
+            raise HTTPException(status_code=HTTPStatus.NOT_ACCEPTABLE, detail=f"O Item {solicitacao_item_id} foi excluído da Solicitação")
+
+        solicitacao_item.unidade = body.unidade if body.unidade else solicitacao_item.unidade
+        solicitacao_item.projecaoQuantidade = body.projecaoQuantidade if body.projecaoQuantidade else solicitacao_item.projecaoQuantidade
+
+        self.db.add(solicitacao_item)
+        self.db.commit()
+        self.db.refresh(solicitacao_item)
+
+        return solicitacao_item
+    
+
+    def get_solicitacao_itens(self, solicitacao_id: int) -> List[models.SolicitacoesItensModel] | HTTPException:
+
+        solicitacao: models.SolicitacoesModel = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
+
+        itens: List[models.SolicitacoesItensModel] = self.db.query(models.SolicitacoesItensModel).filter(
+            models.SolicitacoesItensModel.solicitacaoID == solicitacao.id,
+            models.SolicitacoesItensModel.deleted==False
+        ).all()
+
+        if itens == []:
+            raise HTTPException(status_code=204, detail=f"A solicitação {solicitacao_id} não tem itens cadastrados")
+        
+        return itens
+    
+    def delete_solicitacao_itens(self, solicitacao_item_id: int) -> models.SolicitacoesItensModel | HTTPException:
+
+        solicitacao_item = self.get_solicitacao_item_by_id(solicitacao_item_id=solicitacao_item_id)
+        
+        if solicitacao_item.deleted:
+            return solicitacao_item
+        
+        solicitacao_item.deleted = True
+
+        self.db.add(solicitacao_item)
+        self.db.commit()
+        self.db.refresh(solicitacao_item)
+
+        return solicitacao_item
