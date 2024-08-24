@@ -9,20 +9,11 @@ class UserModel(Base):
     email = Column(String)
     nome = Column(String)
 
+class UsuarioInteressesModel(Base):
 
-class UsuarioInteressesCompra(Base):
-
-    __tablename__ = "USUARIOS_INTERESSES_COMPRA"
-
-    id = Column(BigInteger, primary_key=True, index=True)
-    usuarioID = Column(BigInteger)
-    categoriaID = Column(BigInteger)
-
-
-class UsuarioInteressesVenda(Base):
-
-    __tablename__ = "USUARIOS_INTERESSES_VENDA"
+    __tablename__ = "USUARIOS_INTERESSES"
 
     id = Column(BigInteger, primary_key=True, index=True)
     usuarioID = Column(BigInteger)
     categoriaID = Column(BigInteger)
+    interesseTipo = Column(String)

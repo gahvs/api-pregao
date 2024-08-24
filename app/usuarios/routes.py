@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
 from typing import List
-from itens.schemas import ItensCategoriasSchema
 from . import logic
 from . import schemas
 
@@ -20,12 +19,7 @@ def create_interesse_compra(usuario_id: int, body: schemas.UsuarioInteresseBodyS
     interesse_venda = logic.create_interesse_venda(usuario_id=usuario_id, body=body)
     return schemas.UsuarioInteresseResponseSchema.model_validate(interesse_venda)
 
-@router.get("/{usuario_id}/interesses/compra", response_model=List[ItensCategoriasSchema])
+@router.get("/{usuario_id}/interesses", response_model=List[schemas.UsuarioInteresseResponseSchema])
 def get_interesses_compra(usuario_id: int, logic: logic.UsuarioInteresses = Depends()):
-    interesses = logic.get_usuario_interesses_compra(usuario_id=usuario_id)
-    return map(lambda i: ItensCategoriasSchema.model_validate(i), interesses)
-
-@router.get("/{usuario_id}/interesses/venda", response_model=List[ItensCategoriasSchema])
-def get_interesses_compra(usuario_id: int, logic: logic.UsuarioInteresses = Depends()):
-    interesses = logic.get_usuario_interesses_venda(usuario_id=usuario_id)
-    return map(lambda i: ItensCategoriasSchema.model_validate(i), interesses)
+    interesses = logic.get_usuario_interesses(usuario_id=usuario_id)
+    return map(lambda i: schemas.UsuarioInteresseResponseSchema.model_validate(i), interesses)
