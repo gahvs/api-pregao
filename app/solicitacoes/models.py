@@ -30,19 +30,11 @@ class SolicitacoesItensModel(Base):
     atualizadoEm = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
-class SolicitacoesCompradoresModel(Base):
+class SolicitacoesParticipantesModel(Base):
 
-    __tablename__ = "PREGAO_SOLICITACOES_COMPRADORES"
-
-    id = Column(BigInteger, primary_key=True, index=True)
-    solicitacaoID = Column(BigInteger)
-    compradorID = Column(BigInteger)
-    
-
-class SolicitacoesFornecedoresModel(Base):
-
-    __tablename__ = "PREGAO_SOLICITACOES_FORNECEDORES"
+    __tablename__ = "PREGAO_SOLICITACOES_PARTICIPANTES"
 
     id = Column(BigInteger, primary_key=True, index=True)
     solicitacaoID = Column(BigInteger)
-    fornecedorID = Column(BigInteger)
+    usuarioID = Column(BigInteger)
+    participanteTipo = Column(String)
