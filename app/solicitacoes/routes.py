@@ -32,7 +32,6 @@ def approve_solicitacao(solicitacao_id: int, body: schemas.SolicitacoesRejeicaoB
     solicitacao = logic.reject_solicitacao(solicitacao_id=solicitacao_id, body=body)
     return schemas.SolicitacoesResponseSchema.model_validate(solicitacao)
 
-
 @router.post("/{solicitacao_id}/itens/adicionar", response_model=schemas.SolicitacoesItensResponseSchema)
 def create_solicitacao_item(solicitacao_id: int, body: schemas.SolicitacoesItensBodySchema, logic: logic.SolicitacaoItensLogic = Depends()):
     item = logic.create_solicitacao_item(solicitacao_id=solicitacao_id, body=body)
@@ -57,3 +56,8 @@ def create_solicitacao_comprador(solicitacao_id: int, body: schemas.Solicitacoes
 def create_solicitacao_fornecedor(solicitacao_id: int, body: schemas.SolicitacoesParticipantesBodySchema, logic: logic.SolicitacaoParticipantesLogic = Depends()):
     fornecedor = logic.create_solicitacao_fornecedor(solicitacao_id=solicitacao_id, body=body)
     return schemas.SolicitacoesParticipantesResponseSchema.model_validate(fornecedor)
+
+@router.delete("/{solicitacao_id}/participante/{participante_id}")
+def remove_solicitacao_participante(solicitacao_id: int, participante_id: int, logic: logic.SolicitacaoParticipantesLogic = Depends()):
+    logic.remove_solicitacao_participante(solicitacao_id=solicitacao_id, solicitacao_participante_id=participante_id)
+    return HTTPStatus.NO_CONTENT

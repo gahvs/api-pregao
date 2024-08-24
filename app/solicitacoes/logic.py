@@ -19,8 +19,13 @@ class SolicitacaoLogic:
     
     OBSERVACAO_DEFAULT_VALUE = "Estamos analisando sua solicitação de Pregão"
 
-    def __init__(self, db: Session = Depends(get_db)) -> None:
+    def __init__(self, 
+                 db: Session = Depends(get_db),
+                 user_logic: UserLogic = Depends()
+                 ) -> None:
+        
         self.db: Session = db
+        self.user_logic: UserLogic = user_logic
 
 
     def get_solicitacao_by_id(self, solicitacao_id: int) -> models.SolicitacoesModel | HTTPException:
@@ -37,13 +42,14 @@ class SolicitacaoLogic:
     
     def create_solicitacao(self, body: schemas.SolicitacoesBodySchema) -> models.SolicitacoesModel | HTTPException:
     
+        usuario = self.user_logic.get_user_by_id(body.criadoPor)
 
         solicitacao = models.SolicitacoesModel(
             descricao=body.descricao,
             informacoes=body.informacoes,
             dataHoraInicioSugerida=body.dataHoraInicioSugerida,
             dataHoraFimSugerida=body.dataHoraFimSugerida,
-            criadoPor=1, # usar id do usuario
+            criadoPor=usuario.id,
             status=self.STATUS_EM_ANALISE,
             motivoRejeicao="",
         )
@@ -237,7 +243,9 @@ class SolicitacaoParticipantesLogic:
     def create_solicitacao_fornecedor(self, solicitacao_id: int, body: schemas.SolicitacoesParticipantesBodySchema) -> models.SolicitacoesParticipantesModel | HTTPException:
         return self.create_solicitacao_participante(solicitacao_id=solicitacao_id, usuario_id=body.usuarioID, participante_tipo=self.PARTICIPANTE_FORNECEDOR_TIPO)
     
-    def remove_solicitacao_participante(self, solicitacao_participante_id: int) -> None | HTTPException:
+    def remove_solicitacao_participante(self, solicitacao_id: int, solicitacao_participante_id: int) -> None | HTTPException:
+
+        _ = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
 
         participante = self.get_solicitacao_participante_by_id(solicitacao_participante_id=solicitacao_participante_id)
 
