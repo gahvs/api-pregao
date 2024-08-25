@@ -28,7 +28,7 @@ class PregaoItensModel(Base):
     itemID = Column(BigInteger)
     criadoPor = Column(BigInteger)
     projecaoQuantidade = Column(Double)
-    unidade = Column(String)
+    unidadeID = Column(BigInteger)
     criadoEm = Column(DateTime, default=func.now())
     atualizadoEm = Column(DateTime, default=func.now(), onupdate=func.now())
     deleted = Column(Boolean, default=False)

@@ -71,7 +71,7 @@ class PregaoParticipanteResponseSchema(BaseModel):
 class PregaoItensBodySchema(BaseModel):
 
     itemID: int
-    unidade: str
+    unidadeID: int
     projecaoQuantidade: float
     participanteID: int
         
@@ -81,7 +81,6 @@ class PregaoItensBodySchema(BaseModel):
 
 class PregaoItensBodyUpdateSchema(BaseModel):
 
-    unidade: Optional[str] = None
     projecaoQuantidade: Optional[float] = None
         
     class Config:
@@ -94,7 +93,7 @@ class PregaoItensResponseSchema(BaseModel):
     pregaoID: int
     criadoPor: int
     itemID: int
-    unidade: str
+    unidadeID: int
     projecaoQuantidade: float
     criadoEm: datetime
     atualizadoEm: datetime

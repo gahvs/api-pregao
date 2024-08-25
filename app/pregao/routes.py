@@ -21,19 +21,19 @@ def create_pregao(body: schemas.PregaoCreateSchema, logic: logic.PregaoLogic = D
     return schemas.PregaoSchema.model_validate(pregao)
 
 
-@router.put("/{pregao_id}/cancelar", response_model=schemas.PregaoSchema)
+@router.patch("/{pregao_id}/cancelar", response_model=schemas.PregaoSchema)
 def cancel_pregao(pregao_id: int, logic: logic.PregaoLogic = Depends()):
     pregao = logic.cancel_pregao(pregao_id=pregao_id)
     return schemas.PregaoSchema.model_validate(pregao)
 
 
-@router.put("/{pregao_id}/autorizar", response_model=schemas.PregaoSchema)
+@router.patch("/{pregao_id}/autorizar", response_model=schemas.PregaoSchema)
 def authorize_pregao(pregao_id: int, logic: logic.PregaoLogic = Depends()):
     pregao = logic.authorize_pregao(pregao_id=pregao_id)
     return schemas.PregaoSchema.model_validate(pregao)   
 
 
-@router.put("/{pregao_id}/rejeitar", response_model=schemas.PregaoSchema)
+@router.patch("/{pregao_id}/rejeitar", response_model=schemas.PregaoSchema)
 def reject_pregao(pregao_id: int,  logic: logic.PregaoLogic = Depends()):
     pregao = logic.reject_pregao(pregao_id=pregao_id)
     return schemas.PregaoSchema.model_validate(pregao)

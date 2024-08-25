@@ -7,7 +7,7 @@ from http import HTTPStatus
 from usuarios.logic import UserLogic
 from usuarios.models import UserModel
 from solicitacoes.logic import SolicitacaoItensLogic
-from itens.logic import ItensLogic
+from itens.logic import ItensLogic, ItensUnidadesLogic
 from . import models
 from . import schemas
 
@@ -214,13 +214,15 @@ class PregaoItensLogic:
                     db: Session = Depends(get_db),
                     pregao_logic: PregaoLogic = Depends(PregaoLogic),
                     participantes_logic: PregaoParticipantesLogic = Depends(PregaoParticipantesLogic),
-                    itens_logic: ItensLogic = Depends(ItensLogic)
+                    itens_logic: ItensLogic = Depends(ItensLogic),
+                    unidades_logic: ItensUnidadesLogic = Depends(ItensUnidadesLogic)
             ) -> None:
         
         self.db: Session = db
         self.pregao_logic: PregaoLogic = pregao_logic
         self.participantes_logic: PregaoParticipantesLogic = participantes_logic
         self.itens_logic: ItensLogic = itens_logic
+        self.unidades_logic: ItensUnidadesLogic = unidades_logic
 
     
     def get_pregao_item_by_id(self, pregao_item_id: int) -> models.PregaoItensModel | HTTPException:
@@ -263,6 +265,7 @@ class PregaoItensLogic:
         pregao = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
         participante = self.participantes_logic.get_pregao_participante_by_id(pregao_participante_id=body.participanteID)
         item = self.itens_logic.get_item_by_id(item_id=body.itemID)
+        unidade = self.unidades_logic.get_unidade_by_id(unidade_id=body.unidadeID)
 
         if not self.participantes_logic.participante_is_comprador(participante=participante):
             raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED)
@@ -271,7 +274,7 @@ class PregaoItensLogic:
             pregaoID=pregao.id,
             criadoPor=participante.id,
             itemID=item.id,
-            unidade=body.unidade,
+            unidadeID=unidade.id,
             projecaoQuantidade=body.projecaoQuantidade
         )
 
@@ -287,7 +290,6 @@ class PregaoItensLogic:
         if pregao_item.deleted:
             raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED)
         
-        pregao_item.unidade = body.unidade if body.unidade else pregao_item.unidade
         pregao_item.projecaoQuantidade = body.projecaoQuantidade if body.projecaoQuantidade else pregao_item.projecaoQuantidade
 
         self.db.add(pregao_item)
