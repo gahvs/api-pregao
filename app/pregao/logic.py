@@ -3,9 +3,11 @@ from database.instance import get_db
 from sqlalchemy.orm import Session
 from utils import errors
 from typing import List
+from http import HTTPStatus
 from usuarios.logic import UserLogic
 from usuarios.models import UserModel
 from solicitacoes.logic import SolicitacaoItensLogic
+from itens.logic import ItensLogic
 from . import models
 from . import schemas
 
@@ -113,6 +115,16 @@ class PregaoParticipantesLogic:
         self.user_logic: UserLogic = user_logic
         self.pregao_logic: PregaoLogic = pregao_logic
 
+    def get_pregao_participante_by_id(self, pregao_participante_id: int) -> models.PregaoParticipantesModel | HTTPException:
+
+        pregao_participante = self.db.query(models.PregaoParticipantesModel).filter(
+            models.PregaoParticipantesModel.id==pregao_participante_id
+        ).first()
+
+        if pregao_participante == None:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=errors.not_found_message(resource_name="Participante de Pregão", resource_id=pregao_participante_id))
+        
+        return pregao_participante
 
     def get_pregao_participantes(self, pregao_id: int) -> List[models.PregaoParticipantesModel] | HTTPException:
 
@@ -183,3 +195,132 @@ class PregaoParticipantesLogic:
 
     def create_pregao_participante_fornecedor(self, pregao_id: int, body: schemas.PregaoParticipanteBodySchema) -> models.PregaoParticipantesModel | HTTPException:
         return self.create_pregao_participante(pregao_id=pregao_id, usuario_id=body.usuarioID, participante_tipo=self.PARTICIPANTE_FORNECEDOR_TIPO)
+    
+    def participante_is_comprador(self, participante: models.PregaoParticipantesModel) -> bool:
+        return participante.participanteTipo == self.PARTICIPANTE_COMPRADOR_TIPO
+    
+
+class PregaoItensLogic:
+    '''
+        Realiza operações envolvendo Pregões e Itens do Pregão.
+        Principais operações:
+        - Listagem dos Itens do Pregão
+        - Adicionar Itens à um Pregão
+        - Alterar Itens de um Pregão
+        - Remover Itens de um Pregão
+    '''    
+
+    def __init__(self,
+                    db: Session = Depends(get_db),
+                    pregao_logic: PregaoLogic = Depends(PregaoLogic),
+                    participantes_logic: PregaoParticipantesLogic = Depends(PregaoParticipantesLogic),
+                    itens_logic: ItensLogic = Depends(ItensLogic)
+            ) -> None:
+        
+        self.db: Session = db
+        self.pregao_logic: PregaoLogic = pregao_logic
+        self.participantes_logic: PregaoParticipantesLogic = participantes_logic
+        self.itens_logic: ItensLogic = itens_logic
+
+    
+    def get_pregao_item_by_id(self, pregao_item_id: int) -> models.PregaoItensModel | HTTPException:
+
+        pregao_item = self.db.query(models.PregaoItensModel).filter(
+            models.PregaoItensModel.id==pregao_item_id
+        ).first()
+
+        if pregao_item == None:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=errors.not_found_message(resource_name="Item de Pregão", resource_id=pregao_item_id))
+        
+        return pregao_item
+    
+    def get_pregao_item_using_pregao_item(self, pregao_id: int, item_id: int) -> models.PregaoItensModel | HTTPException:
+
+        pregao_item = self.db.query(models.PregaoItensModel).filter(
+            models.PregaoItensModel.pregaoID==pregao_id,
+            models.PregaoItensModel.itemID==item_id
+        ).first()
+
+        if pregao_item == None:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND)
+        
+        return pregao_item
+    
+    def pregao_item_already_setted(self, pregao_id: int, item_id: int) -> bool:
+
+        pregao_item = self.db.query(models.PregaoItensModel).filter(
+            models.PregaoItensModel.pregaoID==pregao_id,
+            models.PregaoItensModel.itemID==item_id
+        ).first()
+
+        return pregao_item != None 
+
+    def create_pregao_item(self, pregao_id: int, body: schemas.PregaoItensBodySchema) -> models.PregaoItensModel | HTTPException:
+
+        if self.pregao_item_already_setted(pregao_id=pregao_id, item_id=body.itemID):
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Item já adicionado ao Pregão")
+        
+        pregao = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
+        participante = self.participantes_logic.get_pregao_participante_by_id(pregao_participante_id=body.participanteID)
+        item = self.itens_logic.get_item_by_id(item_id=body.itemID)
+
+        if not self.participantes_logic.participante_is_comprador(participante=participante):
+            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED)
+        
+        new_pregao_item = models.PregaoItensModel(
+            pregaoID=pregao.id,
+            criadoPor=participante.id,
+            itemID=item.id,
+            unidade=body.unidade,
+            projecaoQuantidade=body.projecaoQuantidade
+        )
+
+        self.db.add(new_pregao_item)
+        self.db.commit()
+        self.db.refresh(new_pregao_item)
+
+        return new_pregao_item
+    
+    def update_pregao_item(self, pregao_item_id: int, body: schemas.PregaoItensBodyUpdateSchema) -> models.PregaoItensModel | HTTPException:
+
+        pregao_item = self.get_pregao_item_by_id(pregao_item_id=pregao_item_id)
+        if pregao_item.deleted:
+            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED)
+        
+        pregao_item.unidade = body.unidade if body.unidade else pregao_item.unidade
+        pregao_item.projecaoQuantidade = body.projecaoQuantidade if body.projecaoQuantidade else pregao_item.projecaoQuantidade
+
+        self.db.add(pregao_item)
+        self.db.commit()
+        self.db.refresh(pregao_item)
+
+        return pregao_item
+    
+    def get_pregao_itens(self, pregao_id: int) -> List[models.PregaoItensModel] | HTTPException:
+
+        pregao: models.PregaoModel = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
+
+        itens: List[models.PregaoItensModel] = self.db.query(models.PregaoItensModel).filter(
+            models.PregaoItensModel.pregaoID==pregao.id,
+            models.PregaoItensModel.deleted==False
+        ).all()
+
+        if itens == []:
+            raise HTTPException(status_code=HTTPStatus.NO_CONTENT)
+        
+        return itens
+    
+    def delete_pregao_item(self, pregao_item_id: int) -> models.PregaoItensModel | HTTPException:
+
+        pregao_item = self.get_pregao_item_by_id(pregao_item_id=pregao_item_id)
+        
+        if pregao_item.deleted:
+            return pregao_item
+        
+        pregao_item.deleted = True
+
+        self.db.add(pregao_item)
+        self.db.commit()
+        self.db.refresh(pregao_item)
+
+        return pregao_item

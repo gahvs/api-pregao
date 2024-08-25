@@ -118,7 +118,7 @@ class SolicitacaoParticipantesLogic:
         ).first()
 
         if participante == None:
-            raise HTTPException(status_code=HTTPStatus.NO_CONTENT, detail=f"Participante de Solicitação com ID {solicitacao_participante_id} não encontrado")
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Participante de Solicitação com ID {solicitacao_participante_id} não encontrado")
         
         return participante
     
@@ -272,32 +272,33 @@ class SolicitacaoItensLogic:
         if self.solicitacao_item_already_added(solicitacao_id=solicitacao_id, item_id=body.itemID):
             raise HTTPException(status_code=HTTPStatus.NOT_ACCEPTABLE, detail=f"O Item {body.itemID} já foi adicionado à Solicitação, se necessário altere-o")
 
-        solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
-        participante = self.participante_logic.get_participante_using_solicitacao_usuario(solicitacao_id=solicitacao_id, usuario_id=body.participanteID)
+        solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)        
+        participante = self.participante_logic.get_solicitacao_participante_by_id(solicitacao_participante_id=body.participanteID)
+        item = self.itens_logic.get_item_by_id(item_id=body.itemID)
 
         if not self.participante_logic.participante_is_comprador(participante=participante):
-            raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=f"Usuário não participa como Comprador da Solicitacao")
+            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Usuário não participa como Comprador da Solicitacao")
 
-        item = models.SolicitacoesItensModel(
+        new_solicitacao_item = models.SolicitacoesItensModel(
             solicitacaoID=solicitacao.id,
             criadoPor=participante.id,
-            itemID=body.itemID,
+            itemID=item.id,
             unidade=body.unidade,
             projecaoQuantidade=body.projecaoQuantidade,
         )
 
-        self.db.add(item)
+        self.db.add(new_solicitacao_item)
         self.db.commit()
-        self.db.refresh(item)
+        self.db.refresh(new_solicitacao_item)
 
-        return item
+        return new_solicitacao_item
     
 
     def update_solicitacao_item(self, solicitacao_item_id: int, body: schemas.SolicitacoesItensBodyUpdateSchema) -> models.SolicitacoesItensModel | HTTPException:
 
         solicitacao_item = self.get_solicitacao_item_by_id(solicitacao_item_id=solicitacao_item_id)
         if solicitacao_item.deleted:
-            raise HTTPException(status_code=HTTPStatus.NOT_ACCEPTABLE, detail=f"O Item {solicitacao_item_id} foi excluído da Solicitação")
+            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O Item {solicitacao_item_id} foi excluído da Solicitação")
 
         solicitacao_item.unidade = body.unidade if body.unidade else solicitacao_item.unidade
         solicitacao_item.projecaoQuantidade = body.projecaoQuantidade if body.projecaoQuantidade else solicitacao_item.projecaoQuantidade

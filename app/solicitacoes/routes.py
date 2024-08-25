@@ -32,6 +32,15 @@ def approve_solicitacao(solicitacao_id: int, body: schemas.SolicitacoesRejeicaoB
     solicitacao = logic.reject_solicitacao(solicitacao_id=solicitacao_id, body=body)
     return schemas.SolicitacoesResponseSchema.model_validate(solicitacao)
 
+
+
+
+
+
+
+
+
+
 @router.post("/{solicitacao_id}/itens/adicionar", response_model=schemas.SolicitacoesItensResponseSchema)
 def create_solicitacao_item(solicitacao_id: int, body: schemas.SolicitacoesItensBodySchema, logic: logic.SolicitacaoItensLogic = Depends()):
     item = logic.create_solicitacao_item(solicitacao_id=solicitacao_id, body=body)
@@ -42,7 +51,7 @@ def update_solicitacao_item(solicitacao_item_id: int, body: schemas.Solicitacoes
     item = logic.update_solicitacao_item(solicitacao_item_id=solicitacao_item_id, body=body)
     return schemas.SolicitacoesItensResponseSchema.model_validate(item)
 
-@router.delete("/itens/{solicitacao_item_id}/remover", response_model=schemas.SolicitacoesItensResponseSchema)
+@router.delete("/itens/{solicitacao_item_id}", response_model=schemas.SolicitacoesItensResponseSchema)
 def delete_solicitacao_item(solicitacao_item_id: int, logic: logic.SolicitacaoItensLogic = Depends()):
     item_deleted = logic.delete_solicitacao_itens(solicitacao_item_id=solicitacao_item_id)
     return schemas.SolicitacoesItensResponseSchema.model_validate(item_deleted)
@@ -51,6 +60,24 @@ def delete_solicitacao_item(solicitacao_item_id: int, logic: logic.SolicitacaoIt
 def get_solicitacao_itens(solicitacao_id: int, logic: logic.SolicitacaoItensLogic = Depends()):
     itens = logic.get_solicitacao_itens(solicitacao_id=solicitacao_id)
     return list(map(lambda i: schemas.SolicitacoesItensResponseSchema.model_validate(i), itens))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @router.get("/{solicitacao_id}/participantes", response_model=List[schemas.SolicitacoesParticipantesResponseSchema])
 def get_solicitacao_participantes(solicitacao_id: int, logic: logic.SolicitacaoParticipantesLogic = Depends()):

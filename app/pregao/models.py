@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, DateTime, Double, func
+from sqlalchemy import Column, BigInteger, String, DateTime, Double, Boolean, func
 from database.instance import Base
 
 
@@ -27,10 +27,11 @@ class PregaoItensModel(Base):
     pregaoID = Column(BigInteger)
     itemID = Column(BigInteger)
     criadoPor = Column(BigInteger)
-    quantidade = Column(Double)
+    projecaoQuantidade = Column(Double)
     unidade = Column(String)
     criadoEm = Column(DateTime, default=func.now())
     atualizadoEm = Column(DateTime, default=func.now(), onupdate=func.now())
+    deleted = Column(Boolean, default=False)
 
 
 class PregaoParticipantesModel(Base):

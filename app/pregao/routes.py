@@ -52,3 +52,23 @@ def create_pregao_comprador(pregao_id: int, body: schemas.PregaoParticipanteBody
 def create_pregao_fornecedor(pregao_id: int, body: schemas.PregaoParticipanteBodySchema, logic: logic.PregaoParticipantesLogic = Depends()):
     fornecedor = logic.create_pregao_participante_fornecedor(pregao_id=pregao_id, body=body)
     return schemas.PregaoParticipanteResponseSchema.model_validate(fornecedor)
+
+@router.post("/{pregao_id}/itens/adicionar", response_model=schemas.PregaoItensResponseSchema)
+def create_pregao_item(pregao_id: int, body: schemas.PregaoItensBodySchema, logic: logic.PregaoItensLogic = Depends()):
+    pregao_item = logic.create_pregao_item(pregao_id=pregao_id, body=body)
+    return schemas.PregaoItensResponseSchema.model_validate(pregao_item)
+
+@router.patch("/itens/{pregao_item_id}/alterar", response_model=schemas.PregaoItensResponseSchema)
+def update_pregao_item(pregao_item_id: int, body: schemas.PregaoItensBodyUpdateSchema, logic: logic.PregaoItensLogic = Depends()):
+    pregao_item = logic.update_pregao_item(pregao_item_id=pregao_item_id, body=body)
+    return schemas.PregaoItensResponseSchema.model_validate(pregao_item)
+
+@router.delete("/itens/{pregao_item_id}/", response_model=schemas.PregaoItensResponseSchema)
+def delete_pregao_item(pregao_item_id: int, logic: logic.PregaoItensLogic = Depends()):
+    pregao_item = logic.delete_pregao_item(pregao_item_id=pregao_item_id)
+    return schemas.PregaoItensResponseSchema.model_validate(pregao_item)
+
+@router.get("/{pregao_id}/itens", response_model=List[schemas.PregaoItensResponseSchema])
+def get_pregao_itens(pregao_id: int, logic: logic.PregaoItensLogic = Depends()):
+    itens = logic.get_pregao_itens(pregao_id=pregao_id)
+    return map(lambda i: schemas.PregaoItensResponseSchema.model_validate(i), itens)

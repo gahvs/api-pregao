@@ -67,4 +67,39 @@ class PregaoParticipanteResponseSchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
+class PregaoItensBodySchema(BaseModel):
+
+    itemID: int
+    unidade: str
+    projecaoQuantidade: float
+    participanteID: int
         
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+class PregaoItensBodyUpdateSchema(BaseModel):
+
+    unidade: Optional[str] = None
+    projecaoQuantidade: Optional[float] = None
+        
+    class Config:
+        orm_mode = True
+        from_attributes = True        
+
+class PregaoItensResponseSchema(BaseModel):
+
+    id: int
+    pregaoID: int
+    criadoPor: int
+    itemID: int
+    unidade: str
+    projecaoQuantidade: float
+    criadoEm: datetime
+    atualizadoEm: datetime
+    deleted: bool
+
+    class Config:
+        orm_mode = True
+        from_attributes = True        
