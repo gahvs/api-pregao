@@ -30,6 +30,16 @@ class ItensMarcasSchema(BaseModel):
         orm_mode = True
         from_attributes = True        
 
+class ItensUnidadesSchema(BaseModel):
+
+    id: int
+    unidade: str
+    descricao: str
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
         
 class ItensSchema(BaseModel):
 

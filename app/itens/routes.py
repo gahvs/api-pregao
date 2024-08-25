@@ -44,6 +44,16 @@ def get_all_marcas(logic: logic.ItensMarcasLogic = Depends()):
     marcas = logic.get_all_marcas()
     return list(map(lambda m: schemas.ItensMarcasSchema.model_validate(m), marcas))
 
+@router.get("/unidades/{unidade_id}", response_model=schemas.ItensUnidadesSchema)
+def get_unidade_by_id(unidade_id: int, logic: logic.ItensUnidadesLogic = Depends()):
+    unidade = logic.get_unidade_by_id(unidade_id=unidade_id)
+    return schemas.ItensUnidadesSchema.model_validate(unidade)
+
+@router.get("/unidades", response_model=List[schemas.ItensUnidadesSchema])
+def get_all_unidades(logic: logic.ItensUnidadesLogic = Depends()):
+    unidades = logic.get_all_unidades()
+    return map(lambda u: schemas.ItensUnidadesSchema.model_validate(u), unidades)
+
 @router.get("/{item_id}", response_model=schemas.ItensSchema)
 def get_item_by_id(item_id: int, logic: logic.ItensLogic = Depends()):
     item = logic.get_item_by_id(item_id=item_id)

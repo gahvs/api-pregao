@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
+from http import HTTPStatus
 from database.instance import get_db
 from typing import List
 from . import models
@@ -29,7 +30,7 @@ class ItensCategoriaLogic:
         categorias: List[models.ItensCategoriasModel] = self.db.query(models.ItensCategoriasModel).all()
 
         if categorias == []:
-            raise HTTPException(status_code=204, detail=f"Não existem categorias cadastrados")
+            raise HTTPException(status_code=204, detail=f"Não existem categorias cadastradas")
 
         return categorias
 
@@ -82,8 +83,7 @@ class ItensSubCategoriaLogic:
         if subcategorias is None:
             raise HTTPException(status_code=404, detail=f"Não foram encontradas Sub Categorias para a categoria {categoria.nome}")
 
-        return subcategorias
-    
+        return subcategorias    
 
 
 class ItensMarcasLogic:
@@ -123,7 +123,31 @@ class ItensMarcasLogic:
         return marcas
     
 
+class ItensUnidadesLogic: 
 
+    def __init__(self, db: Session = Depends(get_db)) -> None:
+        self.db: Session = db
+
+    def get_unidade_by_id(self, unidade_id: int) -> models.ItensUnidadesModel | HTTPException:
+        
+        unidade = self.db.query(models.ItensUnidadesModel).filter(
+            models.ItensUnidadesModel.id==unidade_id
+        ).first()
+
+        if unidade == None:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Unidade com id {unidade_id} não encontrada")
+
+        return unidade
+    
+    def get_all_unidades(self) -> List[models.ItensUnidadesModel] | HTTPException:
+
+        unidades = self.db.query(models.ItensUnidadesModel).all()
+
+        if unidades == []:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Nenhuma Unidade cadastrada")
+        
+        return unidades
+    
 
 class ItensLogic:
     '''

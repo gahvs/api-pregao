@@ -26,6 +26,15 @@ class ItensMarcasModel(Base):
     nome = Column(String)
 
 
+class ItensUnidadesModel(Base):
+
+    __tablename__ = "ITENS_UNIDADES"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    unidade = Column(String)
+    descricao = Column(String)
+    
+
 class ItensModel(Base):
 
     __tablename__ = "ITENS"
