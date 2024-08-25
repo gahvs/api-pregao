@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from database.instance import get_db
 from usuarios.logic import UserLogic
-from itens.logic import ItensLogic
+from itens.logic import ItensLogic, ItensUnidadesLogic
 from typing import List
 from http import HTTPStatus
 from . import models
@@ -224,12 +224,14 @@ class SolicitacaoItensLogic:
                  db: Session = Depends(get_db),
                  solicitacao_logic: SolicitacaoLogic = Depends(SolicitacaoLogic),
                  participante_logic: SolicitacaoParticipantesLogic = Depends(SolicitacaoParticipantesLogic),
-                 itens_logic: ItensLogic = Depends(ItensLogic)
+                 itens_logic: ItensLogic = Depends(ItensLogic),
+                 unidades_logic: ItensUnidadesLogic = Depends(ItensUnidadesLogic)
             ) -> None:
         self.db: Session = db
         self.itens_logic: ItensLogic = itens_logic
         self.solicitacao_logic: SolicitacaoLogic = solicitacao_logic
         self.participante_logic: SolicitacaoParticipantesLogic = participante_logic
+        self.unidades_logic: ItensUnidadesLogic = unidades_logic
 
 
     def get_solicitacao_item_by_id(self, solicitacao_item_id: int) -> models.SolicitacoesItensModel | HTTPException:
@@ -275,6 +277,7 @@ class SolicitacaoItensLogic:
         solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)        
         participante = self.participante_logic.get_solicitacao_participante_by_id(solicitacao_participante_id=body.participanteID)
         item = self.itens_logic.get_item_by_id(item_id=body.itemID)
+        unidade = self.unidades_logic.get_unidade_by_id(unidade_id=body.unidadeID)
 
         if not self.participante_logic.participante_is_comprador(participante=participante):
             raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Usuário não participa como Comprador da Solicitacao")
@@ -283,7 +286,7 @@ class SolicitacaoItensLogic:
             solicitacaoID=solicitacao.id,
             criadoPor=participante.id,
             itemID=item.id,
-            unidade=body.unidade,
+            unidadeID=unidade.id,
             projecaoQuantidade=body.projecaoQuantidade,
         )
 
@@ -300,7 +303,6 @@ class SolicitacaoItensLogic:
         if solicitacao_item.deleted:
             raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O Item {solicitacao_item_id} foi excluído da Solicitação")
 
-        solicitacao_item.unidade = body.unidade if body.unidade else solicitacao_item.unidade
         solicitacao_item.projecaoQuantidade = body.projecaoQuantidade if body.projecaoQuantidade else solicitacao_item.projecaoQuantidade
 
         self.db.add(solicitacao_item)
@@ -324,6 +326,7 @@ class SolicitacaoItensLogic:
         
         return itens
     
+
     def delete_solicitacao_itens(self, solicitacao_item_id: int) -> models.SolicitacoesItensModel | HTTPException:
 
         solicitacao_item = self.get_solicitacao_item_by_id(solicitacao_item_id=solicitacao_item_id)

@@ -42,7 +42,7 @@ class SolicitacoesResponseSchema(BaseModel):
 class SolicitacoesItensBodySchema(BaseModel):
 
     itemID: int
-    unidade: str
+    unidadeID: int
     projecaoQuantidade: float
     participanteID: int
         
@@ -52,7 +52,6 @@ class SolicitacoesItensBodySchema(BaseModel):
 
 class SolicitacoesItensBodyUpdateSchema(BaseModel):
 
-    unidade: Optional[str] = None
     projecaoQuantidade: Optional[float] = None
         
     class Config:
@@ -65,7 +64,7 @@ class SolicitacoesItensResponseSchema(BaseModel):
     solicitacaoID: int
     criadoPor: int
     itemID: int
-    unidade: str
+    unidadeID: int
     projecaoQuantidade: float
     criadoEm: datetime
     atualizadoEm: datetime
