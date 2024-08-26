@@ -414,8 +414,8 @@ class PregaoLancesLogic:
         if lance_vencedor is not None:
 
             # Verificando se o valor do lance é menor que o lance vencedor atual
-            if body.valorLance > lance_vencedor.valorLance:
-                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Valor de Lance ({body.valorLance}) maior que o Lance Vencedor Atual ({lance_vencedor.valorLance})")
+            if body.valorLance >= lance_vencedor.valorLance:
+                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Valor de Lance ({body.valorLance}) maior ou igual que o Lance Vencedor Atual ({lance_vencedor.valorLance})")
             
             # Verificando se a diferença mínima do valor do lance foi antendida
             diferenca_valor = abs(lance_vencedor.valorLance - body.valorLance)
@@ -423,7 +423,7 @@ class PregaoLancesLogic:
                 raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"A diferença de Valor para o Lance Vencedor Atual é menor que o Limite Mínimo de {regra.diferencaDeValorMinima}")
             
             # Verificando se o numero máximo de lances por minuto não foi excedido
-            fornecedor_lances = self.get_fornecedor_recent_lances(pregao_id=pregao, participante_id=body.participanteID, intervalo_minutos=regra.intervaloDeTempoEmMinutos)
+            fornecedor_lances = self.get_fornecedor_recent_lances(pregao_id=pregao_id, participante_id=body.participanteID, intervalo_minutos=regra.intervaloDeTempoEmMinutos)
             if len(fornecedor_lances) >= regra.lancesPorIntervaloDeTempo:
                 raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Número máximo de Lances Excedido. Permitido são {regra.lancesPorIntervaloDeTempo} Lances a cada {regra.diferencaDeValorMinima} minutos")
         
