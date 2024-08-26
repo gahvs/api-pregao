@@ -1,11 +1,13 @@
 from fastapi import Depends, HTTPException
 from database.instance import get_db
 from sqlalchemy.orm import Session
+from sqlalchemy import asc
 from utils import errors
 from typing import List
 from itertools import chain
 from collections import defaultdict
 from http import HTTPStatus
+from datetime import datetime, timedelta
 from usuarios.logic import UserLogic
 from usuarios.models import UserModel
 from solicitacoes.logic import SolicitacaoLogic, SolicitacaoItensLogic, SolicitacaoParticipantesLogic
@@ -330,6 +332,114 @@ class PregaoItensLogic:
 
         return pregao_item
 
+
+class PregaoLancesLogic: 
+
+    '''
+        Realiza as operações de Lances do Pregao
+    '''
+
+    REGRA_LANCE_DEFAULT = models.PregaoLancesRegrasModel(
+        diferencaDeValorMinima=2.00,
+        intervaloDeTempoEmMinutos=30,
+        lancesPorIntervaloDeTempo=2,
+    )
+
+    def __init__(self,
+                db: Session = Depends(get_db),
+                pregao_logic: PregaoLogic = Depends(PregaoLogic),
+                pregao_itens_logic: PregaoItensLogic = Depends(PregaoItensLogic),
+                pregao_participantes_logic: PregaoParticipantesLogic = Depends(PregaoParticipantesLogic)     
+            ) -> None:
+        
+        self.db: Session = db
+        self.pregao_logic: PregaoLogic = pregao_logic
+        self.pregao_itens_logic: PregaoItensLogic = pregao_itens_logic
+        self.pregao_participantes_logic: PregaoParticipantesLogic = pregao_participantes_logic
+
+
+    def get_lances_regra_ativa(self) -> models.PregaoLancesRegrasModel | HTTPException:
+
+        regra: models.PregaoLancesRegrasModel = self.db.query(models.PregaoLancesRegrasModel).filter(
+            models.PregaoLancesRegrasModel.ativa == True
+        ).first()
+
+        if regra == None:
+            return self.REGRA_LANCE_DEFAULT
+        
+        return regra
+
+
+    def get_lance_vencedor(self, pregao_id: int) -> models.PregaoLancesModel:
+
+        lance_vencedor = (
+            self.db.query(models.PregaoLancesModel).filter(
+                models.PregaoLancesModel.pregaoID==pregao_id
+            ).order_by(
+                asc(models.PregaoLancesModel.valorLance), asc(models.PregaoLancesModel.dataHoraLance), asc(models.PregaoLancesModel.dataHoraRegistro)
+            ).first()
+        )
+
+        return lance_vencedor
+
+    def get_fornecedor_recent_lances(self, pregao_id: int, participante_id: int, intervalo_minutos: int) -> List[models.PregaoLancesModel]:
+
+        data_hora_limite = datetime.now() - timedelta(minutes=intervalo_minutos)
+
+        lances = (
+            self.db.query(models.PregaoLancesModel).filter(
+                models.PregaoLancesModel.pregaoID==pregao_id,
+                models.PregaoLancesModel.participanteID==participante_id,
+                models.PregaoLancesModel.dataHoraRegistro > data_hora_limite
+            ).all()
+        )
+
+        return lances
+
+    def create_pregao_lance(self, pregao_id: int, body: schemas.PregaoLancesBodySchema) -> models.PregaoLancesModel | HTTPException:
+
+        pregao = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
+        pregao_item = self.pregao_itens_logic.get_pregao_item_by_id(pregao_item_id=body.itemID)
+        pregao_participante = self.pregao_participantes_logic.get_pregao_participante_by_id(pregao_participante_id=body.participanteID)
+
+        if pregao_participante.participanteTipo != self.pregao_participantes_logic.PARTICIPANTE_FORNECEDOR_TIPO:
+            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O Participante {pregao_participante.id} do Pregão {pregao_id} não é {self.pregao_participantes_logic.PARTICIPANTE_FORNECEDOR_TIPO} do Pregão")
+
+        # Aplicar aqui as restricoes de lance e verificoes de datas
+        # Verificar status do Pregao para aceite de lances, etc.
+
+        regra = self.get_lances_regra_ativa()
+        lance_vencedor = self.get_lance_vencedor(pregao_id=pregao_id)
+        
+        if lance_vencedor is not None:
+
+            # Verificando se o valor do lance é menor que o lance vencedor atual
+            if body.valorLance > lance_vencedor.valorLance:
+                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Valor de Lance ({body.valorLance}) maior que o Lance Vencedor Atual ({lance_vencedor.valorLance})")
+            
+            # Verificando se a diferença mínima do valor do lance foi antendida
+            diferenca_valor = abs(lance_vencedor.valorLance - body.valorLance)
+            if diferenca_valor < regra.diferencaDeValorMinima:
+                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"A diferença de Valor para o Lance Vencedor Atual é menor que o Limite Mínimo de {regra.diferencaDeValorMinima}")
+            
+            # Verificando se o numero máximo de lances por minuto não foi excedido
+            fornecedor_lances = self.get_fornecedor_recent_lances(pregao_id=pregao, participante_id=body.participanteID, intervalo_minutos=regra.intervaloDeTempoEmMinutos)
+            if len(fornecedor_lances) >= regra.lancesPorIntervaloDeTempo:
+                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Número máximo de Lances Excedido. Permitido são {regra.lancesPorIntervaloDeTempo} Lances a cada {regra.diferencaDeValorMinima} minutos")
+        
+        new_pregao_lance = models.PregaoLancesModel(
+            pregaoID=pregao.id,
+            participanteID=pregao_participante.id,
+            itemID=pregao_item.id,
+            valorLance=body.valorLance,
+            dataHoraLance=body.dataHoraLance
+        )
+
+        self.db.add(new_pregao_lance)
+        self.db.commit()
+        self.db.refresh(new_pregao_lance)
+
+        return new_pregao_lance
 
 
 class PregaoConversoesLogic:

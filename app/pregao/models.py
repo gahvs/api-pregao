@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, DateTime, Double, Boolean, func
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, Double, Boolean, func
 from database.instance import Base
 
 
@@ -51,3 +51,27 @@ class PregaoConversoesModel(Base):
     id = Column(BigInteger, primary_key=True, index=True)
     pregaoID = Column(BigInteger)
     solicitacaoID = Column(BigInteger)
+
+
+class PregaoLancesModel(Base):
+
+    __tablename__ = "PREGAO_PREGOES_LANCES"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    pregaoID = Column(BigInteger)
+    participanteID = Column(BigInteger)
+    itemID = Column(BigInteger)
+    valorLance = Column(Double)
+    dataHoraLance = Column(DateTime)
+    dataHoraRegistro = Column(DateTime, default=func.now())
+
+
+class PregaoLancesRegrasModel(Base):
+
+    __tablename__ = "PREGAO_LANCES_REGRAS"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    ativa = Column(Boolean)
+    diferencaDeValorMinima = Column(Double)
+    intervaloDeTempoEmMinutos = Column(Integer)
+    lancesPorIntervaloDeTempo = Column(Integer)

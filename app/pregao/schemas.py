@@ -101,4 +101,31 @@ class PregaoItensResponseSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        from_attributes = True        
+        from_attributes = True
+
+
+class PregaoLancesBodySchema(BaseModel):
+
+    participanteID: int
+    itemID: int
+    valorLance: float
+    dataHoraLance: datetime
+
+    class Config:
+        orm_mode = True
+        from_attributes = True    
+        
+
+class PregaoLancesResponseSchema(BaseModel):
+
+    id: int
+    pregaoID: int
+    participanteID: int
+    itemID: int
+    valorLance: float
+    dataHoraLance: datetime
+    dataHoraRegistro: datetime
+
+    class Config:
+        orm_mode = True
+        from_attributes = True 

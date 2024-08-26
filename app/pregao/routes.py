@@ -76,3 +76,8 @@ def delete_pregao_item(pregao_item_id: int, logic: logic.PregaoItensLogic = Depe
 def get_pregao_itens(pregao_id: int, logic: logic.PregaoItensLogic = Depends()):
     itens = logic.get_pregao_itens(pregao_id=pregao_id)
     return map(lambda i: schemas.PregaoItensResponseSchema.model_validate(i), itens)
+
+@router.post("/{pregao_id}/lances/registrar", response_model=schemas.PregaoLancesResponseSchema)
+def create_pregao_lance(pregao_id: int, body: schemas.PregaoLancesBodySchema, logic: logic.PregaoLancesLogic = Depends()):
+    pregao_lance = logic.create_pregao_lance(pregao_id=pregao_id, body=body)
+    return schemas.PregaoLancesResponseSchema.model_validate(pregao_lance)
