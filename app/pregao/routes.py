@@ -20,6 +20,10 @@ def create_pregao(body: schemas.PregaoCreateSchema, logic: logic.PregaoLogic = D
     pregao = logic.create_pregao(body=body)
     return schemas.PregaoSchema.model_validate(pregao)
 
+@router.post("/converter", response_model=schemas.PregaoSchema)
+def create_pregao_por_conversao(body: schemas.PregaoCreateSchema, logic: logic.PregaoConversoesLogic = Depends()):
+    pregao = logic.criar_pregao_por_conversao(body=body)
+    return schemas.PregaoSchema.model_validate(pregao)
 
 @router.patch("/{pregao_id}/cancelar", response_model=schemas.PregaoSchema)
 def cancel_pregao(pregao_id: int, logic: logic.PregaoLogic = Depends()):

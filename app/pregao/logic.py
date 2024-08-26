@@ -3,10 +3,13 @@ from database.instance import get_db
 from sqlalchemy.orm import Session
 from utils import errors
 from typing import List
+from itertools import chain
+from collections import defaultdict
 from http import HTTPStatus
 from usuarios.logic import UserLogic
 from usuarios.models import UserModel
 from solicitacoes.logic import SolicitacaoLogic, SolicitacaoItensLogic, SolicitacaoParticipantesLogic
+from solicitacoes.models import SolicitacoesModel, SolicitacoesItensModel, SolicitacoesParticipantesModel
 from itens.logic import ItensLogic, ItensUnidadesLogic
 from . import models
 from . import schemas
@@ -336,14 +339,18 @@ class PregaoConversoesLogic:
 
     def __init__(self,
                 db: Session = Depends(get_db),
+                user_logic: UserLogic = Depends(UserLogic),
                 pregao_logic: PregaoLogic = Depends(PregaoLogic),
+                pregao_participantes_logic: PregaoParticipantesLogic = Depends(PregaoParticipantesLogic),
                 solicitacao_logic: SolicitacaoLogic = Depends(SolicitacaoLogic),
                 solicitacao_participantes_logic: SolicitacaoParticipantesLogic = Depends(SolicitacaoParticipantesLogic),
                 solicitacao_itens_logic: SolicitacaoItensLogic = Depends(SolicitacaoItensLogic)
             ) -> None:
         
         self.db: Session = db
+        self.user_logic: UserLogic = user_logic
         self.pregao_logic: PregaoLogic = pregao_logic
+        self.pregao_participantes_logic: PregaoParticipantesLogic = pregao_participantes_logic
         self.solicitacao_logic: SolicitacaoLogic = solicitacao_logic
         self.solicitacao_participantes_logic: SolicitacaoParticipantesLogic = solicitacao_participantes_logic
         self.solicitacao_itens_logic: SolicitacaoItensLogic = solicitacao_itens_logic
@@ -355,7 +362,102 @@ class PregaoConversoesLogic:
         
         solicitacoes = list(map(lambda solicitacao_id: self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id), body.solicitacoes))
         solicitacoes_itens = list(map(lambda solicitacao: self.solicitacao_itens_logic.get_solicitacao_itens(solicitacao_id=solicitacao.id), solicitacoes))
-        participantes = list(map(lambda solicitacao: self.solicitacao_participantes_logic.get_solicitacao_participantes(solicitacao_id=solicitacao.id), solicitacoes))
+        solicitacoes_participantes = list(map(lambda solicitacao: self.solicitacao_participantes_logic.get_solicitacao_participantes(solicitacao_id=solicitacao.id), solicitacoes))
+
+        pregao_itens = self.unifiy_solicitacao_itens_in_pregao_itens(solicitacao_itens=solicitacoes_itens)
+        pregao_participantes = self.unify_solicitacao_participantes_in_pregao_participantes(solicitacao_participantes=solicitacoes_participantes)
+
+        usuario = self.user_logic.get_user_by_id(user_id=body.usuarioID)
+
+        new_pregao = models.PregaoModel(
+            descricao=body.descricao,
+            informacoes=body.informacoes,
+            criadoPor=usuario.id,
+            dataHoraInicio=body.dataHoraInicio,
+            dataHoraFim=body.dataHoraFim,
+            abertoADemandasEm=body.abertoADemandasEm,
+            abertoADemandasAte=body.abertoADemandasAte
+        )
+
+        self.db.add(new_pregao)
+        self.db.commit()
+        self.db.refresh(new_pregao)
+
+        # Adicionando Criador como Participante do Pregao
+        criador_participante = self.pregao_participantes_logic.create_pregao_participante(pregao_id=new_pregao.id, usuario_id=usuario.id, participante_tipo=self.pregao_participantes_logic.PARTICIPANTE_COMPRADOR_TIPO)
+
+        for pregao_item in pregao_itens:
+            pregao_item.pregaoID = new_pregao.id
+            pregao_item.criadoPor = criador_participante.id
+            self.db.add(pregao_item)
+            self.db.commit()
+
+        for pregao_participante in pregao_participantes:
+            if pregao_participante.usuarioID != criador_participante.usuarioID:
+                pregao_participante.pregaoID = new_pregao.id
+                self.db.add(pregao_participante)
+                self.db.commit()
+
+        
+        return new_pregao
 
 
-        # PAREI AQUI, PROXIMO PASSO É UNIFICAR OS ITENS, PARTICIPANTES E CRIAR OS OBJETOS
+    def unifiy_solicitacao_itens_in_pregao_itens(self, solicitacao_itens: List[SolicitacoesItensModel]) -> List[models.PregaoItensModel] | HTTPException:
+
+        # Unpacking Itens and group by Item id    
+
+        itens_group = defaultdict(list)
+        all_solicitacoes_itens = list(chain(*solicitacao_itens))
+        
+        for item in all_solicitacoes_itens:
+             itens_group[item.id].append(item)        
+
+        itens_matrix = list(itens_group.values())
+
+        # Unify Itens in PregaoItens after Check 'Unidade' consistency
+
+        pregao_itens: List[models.PregaoItensModel] = []
+
+        for itens_group in itens_matrix:
+            
+            unidades = {item.unidadeID for item in itens_group}
+            if len(unidades) > 1:
+                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Divergência de Unidade nos Itens com ID {itens_group[0].id}")
+            
+            item_sample = itens_group[0]
+
+            pregao_itens.append(models.PregaoItensModel(
+                itemID=item_sample.itemID,
+                projecaoQuantidade=sum(item.projecaoQuantidade for item in itens_group),
+                unidadeID=item_sample.unidadeID
+            ))
+
+        return pregao_itens
+    
+    def unify_solicitacao_participantes_in_pregao_participantes(self, solicitacao_participantes: List[SolicitacoesParticipantesModel]) -> List[models.PregaoParticipantesModel] | HTTPException:
+
+        # Unpacking Participantes and group by Usuario ID
+        participantes_group = defaultdict(list)
+        all_participantes = list(chain(*solicitacao_participantes))
+
+        for participante in all_participantes:
+            participantes_group[participante.usuarioID].append(participante)
+
+        participantes_matrix = list(participantes_group.values())
+
+        # Unify Participantes in PregaoParticipantesModel after Check 'participanteTipo' consistency
+
+        pregao_participantes: List[models.PregaoParticipantesModel] = []
+
+        for participante_group in participantes_matrix:
+            participacao_tipo = {participante.participanteTipo for participante in participante_group}
+            if len(participacao_tipo) > 1:
+                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Divergência de Tipo de Participação para o Usuário {participantes_matrix[0].usuarioID}")
+            
+            participante_sample = participante_group[0]
+            pregao_participantes.append(models.PregaoParticipantesModel(
+                usuarioID=participante_sample.usuarioID,
+                participanteTipo=participante_sample.participanteTipo
+            ))
+
+        return pregao_participantes
