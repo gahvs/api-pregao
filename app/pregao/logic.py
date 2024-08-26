@@ -6,7 +6,7 @@ from typing import List
 from http import HTTPStatus
 from usuarios.logic import UserLogic
 from usuarios.models import UserModel
-from solicitacoes.logic import SolicitacaoItensLogic
+from solicitacoes.logic import SolicitacaoLogic, SolicitacaoItensLogic, SolicitacaoParticipantesLogic
 from itens.logic import ItensLogic, ItensUnidadesLogic
 from . import models
 from . import schemas
@@ -326,3 +326,36 @@ class PregaoItensLogic:
         self.db.refresh(pregao_item)
 
         return pregao_item
+    
+
+class PregaoConversoesLogic:
+
+    '''
+        Realiza as operações que criam Pregões através de Solicitacoes de Pregão
+    '''
+
+    def __init__(self,
+                db: Session = Depends(get_db),
+                pregao_logic: PregaoLogic = Depends(PregaoLogic),
+                solicitacao_logic: SolicitacaoLogic = Depends(SolicitacaoLogic),
+                solicitacao_participantes_logic: SolicitacaoParticipantesLogic = Depends(SolicitacaoParticipantesLogic),
+                solicitacao_itens_logic: SolicitacaoItensLogic = Depends(SolicitacaoItensLogic)
+            ) -> None:
+        
+        self.db: Session = db
+        self.pregao_logic: PregaoLogic = pregao_logic
+        self.solicitacao_logic: SolicitacaoLogic = solicitacao_logic
+        self.solicitacao_participantes_logic: SolicitacaoParticipantesLogic = solicitacao_participantes_logic
+        self.solicitacao_itens_logic: SolicitacaoItensLogic = solicitacao_itens_logic
+
+    def criar_pregao_por_conversao(self, body: schemas.PregaoCreateSchema) -> models.PregaoModel | HTTPException:
+
+        if body.solicitacoes == []:
+            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail="É necessário enviar os ID's de Solicitação")
+        
+        solicitacoes = list(map(lambda solicitacao_id: self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id), body.solicitacoes))
+        solicitacoes_itens = list(map(lambda solicitacao: self.solicitacao_itens_logic.get_solicitacao_itens(solicitacao_id=solicitacao.id), solicitacoes))
+        participantes = list(map(lambda solicitacao: self.solicitacao_participantes_logic.get_solicitacao_participantes(solicitacao_id=solicitacao.id), solicitacoes))
+
+
+        # PAREI AQUI, PROXIMO PASSO É UNIFICAR OS ITENS, PARTICIPANTES E CRIAR OS OBJETOS

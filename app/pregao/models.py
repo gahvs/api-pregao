@@ -42,3 +42,12 @@ class PregaoParticipantesModel(Base):
     pregaoID = Column(BigInteger)
     usuarioID = Column(BigInteger)
     participanteTipo = Column(String)
+
+
+class PregaoConversoesModel(Base):
+
+    __tablename__ = "PREGAO_CONVERSOES"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    pregaoID = Column(BigInteger)
+    solicitacaoID = Column(BigInteger)

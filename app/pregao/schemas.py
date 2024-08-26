@@ -47,7 +47,7 @@ class PregaoCreateSchema(BaseModel):
             
         else:
             raise ValueError(errors.invalid_type(resource_name="dataHoraInicio | dataHoraFim",expected_type="String",received_type=type(value)))
-  
+
 
 class PregaoParticipanteBodySchema(BaseModel):
             

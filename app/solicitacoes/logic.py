@@ -13,9 +13,10 @@ class SolicitacaoLogic:
         Realiza ações que tem como contexto a tabela PREGAO_SOLICITACOES
     '''
     
-    STATUS_EM_ANALISE = "Em análise"
-    STATUS_APROVADO = "Aprovado"
-    STATUS_REJEITADO = "Rejeitado"
+    STATUS_EM_ANALISE = "PENDENTE"
+    STATUS_APROVADO = "APROVADA"
+    STATUS_REJEITADO = "REJEITADA"
+    STATUS_CONVERTIDO = "CONVERTIDA"
     
     OBSERVACAO_DEFAULT_VALUE = "Estamos analisando sua solicitação de Pregão"
 
