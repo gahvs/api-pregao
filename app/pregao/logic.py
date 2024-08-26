@@ -421,7 +421,7 @@ class PregaoConversoesLogic:
         all_solicitacoes_itens = list(chain(*solicitacao_itens))
         
         for item in all_solicitacoes_itens:
-             itens_group[item.id].append(item)        
+             itens_group[item.itemID].append(item)        
 
         itens_matrix = list(itens_group.values())
 
