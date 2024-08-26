@@ -370,7 +370,42 @@ class PregaoLancesLogic:
         return regra
 
 
+    def get_pregao_lance_vencedor(self, pregao_id: int) -> models.PregaoLancesModel | HTTPException:
+
+        pregao = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
+
+        lance_vencedor = (
+            self.db.query(models.PregaoLancesModel).filter(
+                models.PregaoLancesModel.pregaoID==pregao.id
+            ).order_by(
+                asc(models.PregaoLancesModel.valorLance), asc(models.PregaoLancesModel.dataHoraLance), asc(models.PregaoLancesModel.dataHoraRegistro)
+            ).first()
+        )
+
+        if lance_vencedor == None:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Não há Lances para o Pregão {pregao_id}")
+
+        return lance_vencedor
+
+
+    def get_pregao_lances(self, pregao_id: int) -> List[models.PregaoLancesModel] | HTTPException:
+        
+        pregao = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
+
+        lances = self.db.query(models.PregaoLancesModel).filter(
+            models.PregaoLancesModel.pregaoID==pregao.id
+        ).order_by(
+            models.PregaoLancesModel.dataHoraRegistro
+        )
+
+        if lances == []:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Não há Lances para o Pregão {pregao_id}")
+        
+        return lances
+    
+
     def get_lance_vencedor(self, pregao_id: int) -> models.PregaoLancesModel:
+        # internal classs use
 
         lance_vencedor = (
             self.db.query(models.PregaoLancesModel).filter(

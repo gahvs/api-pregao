@@ -81,3 +81,13 @@ def get_pregao_itens(pregao_id: int, logic: logic.PregaoItensLogic = Depends()):
 def create_pregao_lance(pregao_id: int, body: schemas.PregaoLancesBodySchema, logic: logic.PregaoLancesLogic = Depends()):
     pregao_lance = logic.create_pregao_lance(pregao_id=pregao_id, body=body)
     return schemas.PregaoLancesResponseSchema.model_validate(pregao_lance)
+
+@router.get("/{pregao_id}/lances", response_model=List[schemas.PregaoLancesResponseSchema])
+def get_pregao_lances(pregao_id: int, logic: logic.PregaoLancesLogic = Depends()):
+    pregao_lances = logic.get_pregao_lances(pregao_id=pregao_id)
+    return map(lambda l: schemas.PregaoLancesResponseSchema.model_validate(l), pregao_lances)
+
+@router.get("/{pregao_id}/lances/vencedor", response_model=schemas.PregaoLancesResponseSchema)
+def get_pregao_lance_vencedor(pregao_id: int, logic: logic.PregaoLancesLogic = Depends()):
+    pregao_lance_vencedor = logic.get_pregao_lance_vencedor(pregao_id=pregao_id)
+    return schemas.PregaoLancesResponseSchema.model_validate(pregao_lance_vencedor)
