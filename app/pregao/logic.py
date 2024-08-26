@@ -433,7 +433,7 @@ class PregaoConversoesLogic:
             
             unidades = {item.unidadeID for item in itens_group}
             if len(unidades) > 1:
-                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Divergência de Unidade nos Itens com ID {itens_group[0].id}")
+                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O Item {itens_group[0].itemID} possui inconsistência de Unidade")
             
             item_sample = itens_group[0]
 
@@ -463,7 +463,7 @@ class PregaoConversoesLogic:
         for participante_group in participantes_matrix:
             participacao_tipo = {participante.participanteTipo for participante in participante_group}
             if len(participacao_tipo) > 1:
-                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Divergência de Tipo de Participação para o Usuário {participantes_matrix[0].usuarioID}")
+                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O Usuário {participante_group[0].usuarioID} possui inconsistência de Participação")
             
             participante_sample = participante_group[0]
             pregao_participantes.append(models.PregaoParticipantesModel(
