@@ -329,7 +329,8 @@ class PregaoItensLogic:
         self.db.refresh(pregao_item)
 
         return pregao_item
-    
+
+
 
 class PregaoConversoesLogic:
 
@@ -354,6 +355,17 @@ class PregaoConversoesLogic:
         self.solicitacao_logic: SolicitacaoLogic = solicitacao_logic
         self.solicitacao_participantes_logic: SolicitacaoParticipantesLogic = solicitacao_participantes_logic
         self.solicitacao_itens_logic: SolicitacaoItensLogic = solicitacao_itens_logic
+
+    def save_conversion(self, pregao_id: int, solicitacoes: List[int]) -> None:
+
+        for solicitacao_id in solicitacoes:
+            new_conversao = models.PregaoConversoesModel(
+                pregaoID=pregao_id,
+                solicitacaoID=solicitacao_id
+            )  
+
+            self.db.add(new_conversao)
+            self.db.commit()
 
     def criar_pregao_por_conversao(self, body: schemas.PregaoCreateSchema) -> models.PregaoModel | HTTPException:
 
@@ -409,6 +421,9 @@ class PregaoConversoesLogic:
             solicitacao.status = self.solicitacao_logic.STATUS_CONVERTIDO
             self.db.add(solicitacao)
             self.db.commit()
+
+        # Registrando Conversoes
+        self.save_conversion(pregao_id=new_pregao.id, solicitacoes=body.solicitacoes)
 
         return new_pregao
 
