@@ -361,6 +361,10 @@ class PregaoConversoesLogic:
             raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail="É necessário enviar os ID's de Solicitação")
         
         solicitacoes = list(map(lambda solicitacao_id: self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id), body.solicitacoes))
+        for solicitacao in solicitacoes:
+            if solicitacao.status == self.solicitacao_logic.STATUS_CONVERTIDO:
+                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Solicitacao {solicitacao.id} já convertida em Pregão")
+
         solicitacoes_itens = list(map(lambda solicitacao: self.solicitacao_itens_logic.get_solicitacao_itens(solicitacao_id=solicitacao.id), solicitacoes))
         solicitacoes_participantes = list(map(lambda solicitacao: self.solicitacao_participantes_logic.get_solicitacao_participantes(solicitacao_id=solicitacao.id), solicitacoes))
 
@@ -386,19 +390,26 @@ class PregaoConversoesLogic:
         # Adicionando Criador como Participante do Pregao
         criador_participante = self.pregao_participantes_logic.create_pregao_participante(pregao_id=new_pregao.id, usuario_id=usuario.id, participante_tipo=self.pregao_participantes_logic.PARTICIPANTE_COMPRADOR_TIPO)
 
+        # Salvando Itens do Pregao importados das Solicitacoes
         for pregao_item in pregao_itens:
             pregao_item.pregaoID = new_pregao.id
             pregao_item.criadoPor = criador_participante.id
             self.db.add(pregao_item)
             self.db.commit()
 
+        # Salvando Participantes do Pregao importados das Solicitacoes
         for pregao_participante in pregao_participantes:
             if pregao_participante.usuarioID != criador_participante.usuarioID:
                 pregao_participante.pregaoID = new_pregao.id
                 self.db.add(pregao_participante)
                 self.db.commit()
 
-        
+        # Atualizando Status das Solicitacoes
+        for solicitacao in solicitacoes:
+            solicitacao.status = self.solicitacao_logic.STATUS_CONVERTIDO
+            self.db.add(solicitacao)
+            self.db.commit()
+
         return new_pregao
 
 
