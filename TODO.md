@@ -1,37 +1,26 @@
 # Principais Atualizações:
 
 
-## SOLICITACAO:
-- ``PARA FAZER`` Refazer lógica de participantes das Solicitações de Pregão - Copiar o que foi feito no Pregão
+### Maior Flexibilidade de Regras de Lances:
+- Adicionar referencia a Regra de Lance nos Pregoes
+- Criar rota para definicao de Regras de Lance
 
-## PREGAO:
+### Atualizacao de Catalogo:
 
-- ``EM ANDAMENTO`` Refazer lógica de participantes do Pregao, hoje a API trabalha com a tabela ``PREGAO_PARTICIPANTES``, mas o Banco foi atualizado com duas novas entidades: ``PREGOES_PREGAO_COMPRADORES`` & ``PREGOES_PREGAO_FORNECEDORES``.
-**Tarefas**: 
-    - Criar classes *model* das entidades - ``DONE``
-    - Criar classes *schemas* das entidades - ``DONE``
-    - Criar classes *logic* para as entidades
-    - Implementar operações de adicionar e remover Compradores e Fornecedores
-    - Implementar operações de listagem de Compradores e Fornecedores 
-    - Definir os *handlers* e *endpoints* das operações 
-    - Implementar lógica para não permitir comprador e fornecedor no mesmo Pregão - ``VER DEPOIS``
+- Adicionar Rota para definicao de SubCategorias , Categorias , Marcas e Itens
 
-<BR>
+### Maior Flexibilidade na Criação de Solicitações de Pregão:
+- Remover restrição de existência de Item na criação da solicitação
 
-- ``PARA FAZER`` Desenvolver fluxo 'Criar Pregão por Solicitacao'. Receberá o ID da Solicitação aprovada, campos adicionais que apenas o Pregão possui e irá realizar a criação do PREGAO usando os itens e participantes da Solicitação.
+### Maior Flexibilidade na conversão de Solicitações em Pregões:
+- Adicionar funcionalidade de extensão de Pregão a partir de Solicitação
 
----
+### Ajuste dos Status do Pregão
+- Implementar novos status de Pregão
+- Implementar as restrições de operação de acordo com os Status
 
-## SOLICITACAO:
-- ``CONCLUÍDO`` Criar lógica de participantes da Solicitação, criando as entidades: ``PREGOES_SOLICITACOES_COMPRADORES`` & ``PREGOES_SOLICITACOES_FORNECEDORES``
-**Tarefas**: 
-    - Criar novas entidades no banco de dados seguindo estrutura do Pregão - ``DONE``
-    - Criar classes *model* das entidades - ``DONE``
-    - Criar classes *schemas* das entidades - ``DONE``
-    - Criar classes *logic* para as entidades - ``DONE``
-    - Implementar operações de adicionar e remover Compradores e Fornecedores - ``DONE``
-    - Implementar operações de listagem de Compradores e Fornecedores  - ``DONE``
-    - Definir os *handlers* e *endpoints* das operações  - ``DONE``
-    - Implementar lógica para não permitir comprador e fornecedor na mesma solicitação - ``VER DEPOIS``
-            
+### Melhoria da Negociação do Pregão
+- Permitir alterações de Demanda durante execução do Pregão
+- Adicionar aos Itens do Pregão flag de demanda atual para historico de alteração de demandas
+
 ---
