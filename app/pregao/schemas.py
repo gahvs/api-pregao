@@ -8,6 +8,7 @@ class PregaoSchema(BaseModel):
     id: int
     descricao: str
     informacoes: str
+    regraLanceID: int
     status: str
     criadoPor: int
     criadoEm: datetime
@@ -31,6 +32,7 @@ class PregaoCreateSchema(BaseModel):
     dataHoraFim: str
     abertoADemandasEm: str
     abertoADemandasAte: str
+    regraLanceID: int
     solicitacoes: Optional[List[int]] = Field(default=[])
 
     class Config:
