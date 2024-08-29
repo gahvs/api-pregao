@@ -12,6 +12,7 @@ class PregaoModel(Base):
     status = Column(String, index=True, default="PENDENTE")
     criadoPor = Column(BigInteger)
     criadoEm = Column(DateTime, default=func.now())
+    regraLanceID = Column(BigInteger)
     atualizadoEm = Column(DateTime, default=func.now(), onupdate=func.now())
     dataHoraInicio = Column(DateTime)
     dataHoraFim = Column(DateTime)
@@ -70,8 +71,7 @@ class PregaoLancesRegrasModel(Base):
 
     __tablename__ = "PREGAO_LANCES_REGRAS"
 
-    id = Column(BigInteger, primary_key=True, index=True)
-    ativa = Column(Boolean)
+    id = Column(BigInteger, primary_key=True, index=True)    
     diferencaDeValorMinima = Column(Double)
     intervaloDeTempoEmMinutos = Column(Integer)
     lancesPorIntervaloDeTempo = Column(Integer)

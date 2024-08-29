@@ -91,3 +91,18 @@ def get_pregao_lances(pregao_id: int, logic: logic.PregaoLancesLogic = Depends()
 def get_pregao_lance_vencedor(pregao_id: int, logic: logic.PregaoLancesLogic = Depends()):
     pregao_lance_vencedor = logic.get_pregao_lance_vencedor(pregao_id=pregao_id)
     return schemas.PregaoLancesResponseSchema.model_validate(pregao_lance_vencedor)
+
+@router.post("/lances/regras/nova", response_model=schemas.PregaoRegrasLancesResponseSchema)
+def create_regra_lances(body: schemas.PregaoRegrasLanceBodySchema, logic: logic.PregaoRegrasLancesLogic = Depends()):
+    regra = logic.create_regra_lances(body=body)
+    return schemas.PregaoRegrasLancesResponseSchema.model_validate(regra)
+
+@router.get("/lances/regras", response_model=List[schemas.PregaoRegrasLancesResponseSchema])
+def get_all_regras_lances(logic: logic.PregaoRegrasLancesLogic = Depends()):
+    regras = logic.get_all_regras_lances()
+    return map(lambda r : schemas.PregaoRegrasLancesResponseSchema.model_validate(r), regras)
+
+@router.get("/lances/regras/{regra_id}", response_model=schemas.PregaoRegrasLancesResponseSchema)
+def get_regra_lance(regra_id: int, logic: logic.PregaoRegrasLancesLogic = Depends()):
+    regra = logic.get_regra_lances_by_id(regra_id=regra_id)
+    return schemas.PregaoRegrasLancesResponseSchema.model_validate(regra)

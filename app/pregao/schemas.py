@@ -128,4 +128,27 @@ class PregaoLancesResponseSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        from_attributes = True 
+        from_attributes = True
+
+
+class PregaoRegrasLanceBodySchema(BaseModel):
+    
+    diferencaDeValorMinima: float
+    intervaloDeTempoEmMinutos: int
+    lancesPorIntervaloDeTempo: int
+        
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
+class PregaoRegrasLancesResponseSchema(BaseModel):
+
+    id: int
+    diferencaDeValorMinima: float
+    intervaloDeTempoEmMinutos: int
+    lancesPorIntervaloDeTempo: int
+        
+    class Config:
+        orm_mode = True
+        from_attributes = True

@@ -333,17 +333,70 @@ class PregaoItensLogic:
         return pregao_item
 
 
+class PregaoRegrasLancesLogic:
+
+    '''
+        Cria e retorna regras de lances de Pregoes
+    '''
+
+
+    def __init__(self, db: Session = Depends(get_db)) -> None:
+        self.db: Session = db
+
+
+    def create_regra_lances(self, body: schemas.PregaoRegrasLanceBodySchema) -> models.PregaoLancesRegrasModel:
+
+        if body.diferencaDeValorMinima <= 0:
+            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O valor {body.diferencaDeValorMinima} é inválido par o campo 'diferencaDeValorMinima'")
+        
+        if body.intervaloDeTempoEmMinutos <= 0:
+            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O valor {body.intervaloDeTempoEmMinutos} é inválido par o campo 'intervaloDeTempoEmMinutos'")
+                
+        if body.lancesPorIntervaloDeTempo <= 0:
+            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O valor {body.lancesPorIntervaloDeTempo} é inválido par o campo 'lancesPorIntervaloDeTempo'")
+
+        new_regra_lance = models.PregaoLancesRegrasModel(
+            diferencaDeValorMinima=body.diferencaDeValorMinima,
+            intervaloDeTempoEmMinutos=body.intervaloDeTempoEmMinutos,
+            lancesPorIntervaloDeTempo=body.lancesPorIntervaloDeTempo,
+        )
+
+
+        self.db.add(new_regra_lance)
+        self.db.commit()
+        self.db.refresh(new_regra_lance)
+
+        return new_regra_lance
+
+
+    def get_regra_lances_by_id(self, regra_id: int) -> models.PregaoLancesRegrasModel:
+        
+        regra: models.PregaoLancesRegrasModel = self.db.query(models.PregaoLancesRegrasModel).filter(
+            models.PregaoLancesRegrasModel.id == regra_id
+        ).first()
+
+        if regra == None:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Não há Regra de Lance cadastrada com o ID: {regra_id}")
+        
+        return regra
+    
+    
+    def get_all_regras_lances(self) -> List[models.PregaoLancesRegrasModel] | HTTPException:
+
+        regras: List[models.PregaoLancesRegrasModel] = self.db.query(models.PregaoLancesRegrasModel).all()
+
+        if regras == []:
+            raise HTTPException(status_code=HTTPStatus.NO_CONTENT, detail="Não nenhuma Regra de Lance de Pregão definida")
+        
+        return regras
+    
+
+
 class PregaoLancesLogic: 
 
     '''
         Realiza as operações de Lances do Pregao
     '''
-
-    REGRA_LANCE_DEFAULT = models.PregaoLancesRegrasModel(
-        diferencaDeValorMinima=2.00,
-        intervaloDeTempoEmMinutos=30,
-        lancesPorIntervaloDeTempo=2,
-    )
 
     def __init__(self,
                 db: Session = Depends(get_db),
@@ -356,18 +409,6 @@ class PregaoLancesLogic:
         self.pregao_logic: PregaoLogic = pregao_logic
         self.pregao_itens_logic: PregaoItensLogic = pregao_itens_logic
         self.pregao_participantes_logic: PregaoParticipantesLogic = pregao_participantes_logic
-
-
-    def get_lances_regra_ativa(self) -> models.PregaoLancesRegrasModel | HTTPException:
-
-        regra: models.PregaoLancesRegrasModel = self.db.query(models.PregaoLancesRegrasModel).filter(
-            models.PregaoLancesRegrasModel.ativa == True
-        ).first()
-
-        if regra == None:
-            return self.REGRA_LANCE_DEFAULT
-        
-        return regra
 
 
     def get_pregao_lance_vencedor(self, pregao_id: int) -> models.PregaoLancesModel | HTTPException:
