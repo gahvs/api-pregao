@@ -1,11 +1,12 @@
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, declarative_base
-from environment.variables import POSTGRES_URL, POSTGRES_SCHEMA
+from environment.variables import get_db_url, get_db_schema
 
-engine = create_engine(POSTGRES_URL)
+
+engine = create_engine(get_db_url())
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base(metadata=MetaData(schema=POSTGRES_SCHEMA))
+Base = declarative_base(metadata=MetaData(schema=get_db_schema()))
 
 def get_db():
 
