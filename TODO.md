@@ -2,8 +2,8 @@
 
 
 ### Maior Flexibilidade de Regras de Lances:
-- Adicionar referencia a Regra de Lance nos Pregoes
-- Criar rota para definicao de Regras de Lance
+- Adicionar referencia a Regra de Lance nos Pregoes - ``DONE``
+- Criar rota para definicao de Regras de Lance - ``DONE``
 
 ### Atualizacao de Catalogo:
 
