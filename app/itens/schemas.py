@@ -1,9 +1,13 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 class ItensCategoriasSchema(BaseModel):
 
     id: int
     nome: str
+    criadoEm: datetime
+    atualizadoEm: datetime
+    deleted: bool
 
     class Config:
         orm_mode = True
@@ -22,6 +26,9 @@ class ItensSubCategoriasSchema(BaseModel):
     id: int
     categoriaID: int
     nome: str
+    criadoEm: datetime
+    atualizadoEm: datetime
+    deleted: bool
 
     class Config:
         orm_mode = True
@@ -38,7 +45,7 @@ class ItensSubCategoriasBodySchema(BaseModel):
 
 class ItensMarcasBodySchema(BaseModel):
 
-    nome: str
+    nome: str   
 
     class Config:
         orm_mode = True
@@ -48,6 +55,9 @@ class ItensMarcasSchema(BaseModel):
 
     id: int
     nome: str
+    criadoEm: datetime
+    atualizadoEm: datetime
+    deleted: bool
 
     class Config:
         orm_mode = True
@@ -58,6 +68,9 @@ class ItensUnidadesSchema(BaseModel):
     id: int
     unidade: str
     descricao: str
+    criadoEm: datetime
+    atualizadoEm: datetime
+    deleted: bool
 
     class Config:
         orm_mode = True
@@ -80,6 +93,9 @@ class ItensSchema(BaseModel):
     categoriaID: int
     subcategoriaID: int
     marcaID: int
+    criadoEm: datetime
+    atualizadoEm: datetime
+    deleted: bool
 
     class Config:
         orm_mode = True
