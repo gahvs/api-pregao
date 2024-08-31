@@ -9,6 +9,13 @@ class ItensCategoriasSchema(BaseModel):
         orm_mode = True
         from_attributes = True
 
+class ItensCategoriasBodySchema(BaseModel):
+
+    nome: str
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
 class ItensSubCategoriasSchema(BaseModel):
 
@@ -18,7 +25,16 @@ class ItensSubCategoriasSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        from_attributes = True       
+        from_attributes = True
+
+class ItensSubCategoriasBodySchema(BaseModel):
+
+    categoriaID: int
+    nome: str
+
+    class Config:
+        orm_mode = True
+        from_attributes = True          
 
 class ItensMarcasBodySchema(BaseModel):
 
@@ -47,6 +63,14 @@ class ItensUnidadesSchema(BaseModel):
         orm_mode = True
         from_attributes = True
 
+class ItensUnidadesBodySchema(BaseModel):
+
+    unidade: str
+    descricao: str
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
         
 class ItensSchema(BaseModel):
 
@@ -60,3 +84,15 @@ class ItensSchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
+class ItensBodySchema(BaseModel):
+
+    nome: str
+    descricao: str
+    categoriaID: int
+    subcategoriaID: int
+    marcaID: int
+
+    class Config:
+        orm_mode = True
+        from_attributes = True        

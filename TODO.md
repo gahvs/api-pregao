@@ -7,7 +7,7 @@
 
 ### Atualizacao de Catalogo:
 
-- Adicionar Rota para definicao de SubCategorias , Categorias , Marcas e Itens
+- Adicionar Rota para definicao de Unidades, SubCategorias, Categorias, Marcas e Itens
 
 ### Maior Flexibilidade na Criação de Solicitações de Pregão:
 - Remover restrição de existência de Item na criação da solicitação

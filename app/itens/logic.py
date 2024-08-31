@@ -33,6 +33,18 @@ class ItensCategoriaLogic:
             raise HTTPException(status_code=204, detail=f"Não existem categorias cadastradas")
 
         return categorias
+    
+    def create_categoria(self, body: schemas.ItensCategoriasBodySchema) -> models.ItensCategoriasModel:
+
+        new_categoria: models.ItensCategoriasModel = models.ItensCategoriasModel(
+            nome=body.nome
+        )
+
+        self.db.add(new_categoria)
+        self.db.commit()
+        self.db.refresh(new_categoria)
+
+        return new_categoria
 
 
 class ItensSubCategoriaLogic:
@@ -80,11 +92,27 @@ class ItensSubCategoriaLogic:
         ).all()
 
         
-        if subcategorias is None:
+        if subcategorias == []:
             raise HTTPException(status_code=404, detail=f"Não foram encontradas Sub Categorias para a categoria {categoria.nome}")
 
         return subcategorias    
 
+
+    def create_subcategoria(self, body: schemas.ItensSubCategoriasBodySchema) -> models.ItensSubCategoriasModel | HTTPException:
+
+        categoria: models.ItensCategoriasModel = self.categoria_logic.get_categoria_by_id(categoria_id=body.categoriaID)
+
+        new_subcategoria = models.ItensSubCategoriasModel(
+            categoriaID=categoria.id,
+            nome=body.nome
+        )
+
+        self.db.add(new_subcategoria)
+        self.db.commit()
+        self.db.refresh(new_subcategoria)
+
+        return new_subcategoria
+    
 
 class ItensMarcasLogic:
     '''
@@ -158,14 +186,38 @@ class ItensUnidadesLogic:
         
         return unidades
     
+    def create_unidade(self, body: schemas.ItensUnidadesBodySchema) -> models.ItensUnidadesModel | HTTPException:
+
+        if len(body.unidade) > 3:
+            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail="O campo Unidade deve conter até 3 caracteres")
+        
+        new_unidade: models.ItensUnidadesModel = models.ItensUnidadesModel(
+            unidade=body.unidade,
+            descricao=body.descricao
+        )
+
+        self.db.add(new_unidade)
+        self.db.commit()
+        self.db.refresh(new_unidade)
+
+        return new_unidade
+    
 
 class ItensLogic:
     '''
         Realiza ações que tem como contexto a tabela ITENS
     '''
 
-    def __init__(self, db: Session = Depends(get_db)) -> None:
+    def __init__(self, 
+                 db: Session = Depends(get_db),
+                 categorias_logic: ItensCategoriaLogic = Depends(ItensCategoriaLogic),
+                 subcategorias_logic: ItensSubCategoriaLogic = Depends(ItensSubCategoriaLogic),
+                 marcas_logic: ItensMarcasLogic = Depends(ItensMarcasLogic)
+            ) -> None:
         self.db: Session = db
+        self.categorias_logic: ItensCategoriaLogic = categorias_logic
+        self.subcategorias_logic: ItensSubCategoriaLogic = subcategorias_logic
+        self.marcas_logic: ItensMarcasLogic = marcas_logic
 
     def get_item_by_id(self, item_id: int) -> models.ItensModel | HTTPException:
 
@@ -186,3 +238,23 @@ class ItensLogic:
             raise HTTPException(status_code=204, detail="Não há itens cadastrados")
         
         return itens
+    
+    def create_item(self, body: schemas.ItensBodySchema) -> models.ItensModel | HTTPException:
+
+        marca = self.marcas_logic.get_marca_by_id(marca_id=body.marcaID)
+        categoria = self.categorias_logic.get_categoria_by_id(categoria_id=body.categoriaID)
+        subcategoria = self.subcategorias_logic.get_sub_categoria_by_id(subcategoria_id=body.subcategoriaID)
+
+        new_item = models.ItensModel(
+            nome=body.nome,
+            descricao=body.descricao,
+            marcaID=marca.id,
+            subcategoriaID=subcategoria.id,
+            categoriaID=categoria.id
+        )
+
+        self.db.add(new_item)
+        self.db.commit()
+        self.db.refresh(new_item)
+
+        return new_item

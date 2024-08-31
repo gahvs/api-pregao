@@ -8,6 +8,10 @@ router = APIRouter(
     tags=["Itens"]
 )
 
+@router.post("/categorias/nova", response_model=schemas.ItensCategoriasSchema)
+def create_categoria(body: schemas.ItensCategoriasBodySchema, logic: logic.ItensCategoriaLogic = Depends()):
+    categoria = logic.create_categoria(body=body)
+    return schemas.ItensCategoriasSchema.model_validate(categoria)
 
 @router.get("/categorias/{categoria_id}", response_model=schemas.ItensCategoriasSchema)
 def get_categoria_by_id(categoria_id: int, logic: logic.ItensCategoriaLogic = Depends()):
@@ -18,6 +22,11 @@ def get_categoria_by_id(categoria_id: int, logic: logic.ItensCategoriaLogic = De
 def get_all_categorias(logic: logic.ItensCategoriaLogic = Depends()):
     itens = logic.get_all_categorias()
     return list(map(lambda i: schemas.ItensCategoriasSchema.model_validate(i), itens))
+
+@router.post("/subcategorias/nova", response_model=schemas.ItensSubCategoriasSchema)
+def create_subcategoria(body: schemas.ItensSubCategoriasBodySchema, logic: logic.ItensSubCategoriaLogic = Depends() ):
+    subcategoria = logic.create_subcategoria(body=body)
+    return schemas.ItensSubCategoriasSchema.model_validate(subcategoria)
 
 @router.get("/subcategorias/{subcategoria_id}", response_model=schemas.ItensSubCategoriasSchema)
 def get_subcategoria_by_id(subcategoria_id: int, logic: logic.ItensSubCategoriaLogic = Depends()):
@@ -49,6 +58,11 @@ def get_all_marcas(logic: logic.ItensMarcasLogic = Depends()):
     marcas = logic.get_all_marcas()
     return list(map(lambda m: schemas.ItensMarcasSchema.model_validate(m), marcas))
 
+@router.post("/unidades/nova", response_model=schemas.ItensUnidadesSchema)
+def create_unidade(body: schemas.ItensUnidadesBodySchema, logic: logic.ItensUnidadesLogic = Depends()):
+    unidade = logic.create_unidade(body=body)
+    return schemas.ItensUnidadesSchema.model_validate(unidade)
+
 @router.get("/unidades/{unidade_id}", response_model=schemas.ItensUnidadesSchema)
 def get_unidade_by_id(unidade_id: int, logic: logic.ItensUnidadesLogic = Depends()):
     unidade = logic.get_unidade_by_id(unidade_id=unidade_id)
@@ -58,6 +72,11 @@ def get_unidade_by_id(unidade_id: int, logic: logic.ItensUnidadesLogic = Depends
 def get_all_unidades(logic: logic.ItensUnidadesLogic = Depends()):
     unidades = logic.get_all_unidades()
     return map(lambda u: schemas.ItensUnidadesSchema.model_validate(u), unidades)
+
+@router.post("/novo", response_model=schemas.ItensSchema)
+def create_item(body: schemas.ItensBodySchema, logic: logic.ItensLogic = Depends()):
+    item = logic.create_item(body=body)
+    return schemas.ItensSchema.model_validate(item)
 
 @router.get("/{item_id}", response_model=schemas.ItensSchema)
 def get_item_by_id(item_id: int, logic: logic.ItensLogic = Depends()):
