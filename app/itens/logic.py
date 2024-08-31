@@ -48,6 +48,17 @@ class ItensCategoriaLogic:
 
         return new_categoria
 
+    def update_categoria(self, categoria_id: int, body: schemas.ItensCategoriasBodySchema) -> models.ItensCategoriasModel:
+
+        categoria: models.ItensCategoriasModel = self.get_categoria_by_id(categoria_id=categoria_id)
+
+        categoria.nome = body.nome
+        
+        self.db.add(categoria)
+        self.db.commit()
+        self.db.refresh(categoria)
+
+        return categoria
 
     def delete_categoria(self, categoria_id: int) -> models.ItensCategoriasModel | HTTPException:
 
@@ -135,6 +146,21 @@ class ItensSubCategoriaLogic:
         return new_subcategoria
     
 
+    def update_subcategoria(self, subcategoria_id: int, body: schemas.ItensSubCategoriasBodySchema) -> models.ItensSubCategoriasModel | HTTPException:
+
+        categoria: models.ItensCategoriasModel = self.categoria_logic.get_categoria_by_id(categoria_id=body.categoriaID)
+        subcategoria: models.ItensSubCategoriasModel = self.get_sub_categoria_by_id(subcategoria_id=subcategoria_id)
+
+        subcategoria.nome = body.nome
+        subcategoria.categoriaID = categoria.id
+
+        self.db.add(subcategoria)
+        self.db.commit()
+        self.db.refresh(subcategoria)
+
+        return subcategoria
+    
+
     def delete_subcategoria(self, subcategoria_id: int) -> models.ItensSubCategoriasModel | HTTPException:
 
         subcategoria: models.ItensSubCategoriasModel = self.get_sub_categoria_by_id(subcategoria_id=subcategoria_id)
@@ -149,6 +175,7 @@ class ItensSubCategoriaLogic:
         self.db.refresh(subcategoria)
 
         return subcategoria
+
 
 class ItensMarcasLogic:
     '''
@@ -197,6 +224,18 @@ class ItensMarcasLogic:
         self.db.refresh(new_marca)
 
         return new_marca
+    
+    def update_marca(self, marca_id: int, body: schemas.ItensMarcasBodySchema) -> models.ItensMarcasModel:
+
+        marca: models.ItensMarcasModel = self.get_marca_by_id(marca_id=marca_id)
+
+        marca.nome = body.nome
+
+        self.db.add(marca)
+        self.db.commit()
+        self.db.refresh(marca)
+
+        return marca    
     
     def delete_marca(self, marca_id: int) -> models.ItensMarcasModel | HTTPException:
         
@@ -257,6 +296,21 @@ class ItensUnidadesLogic:
 
         return new_unidade
     
+    def update_unidade(self, unidade_id: int, body: schemas.ItensUnidadesBodySchema) -> models.ItensUnidadesModel | HTTPException:
+
+        if len(body.unidade) > 3:
+            raise ResourceExpectationFailedException()
+        
+        unidade: models.ItensUnidadesModel = self.get_unidade_by_id(unidade_id=unidade_id)
+
+        unidade.unidade = body.unidade
+        unidade.descricao = body.descricao
+
+        self.db.add(unidade)
+        self.db.commit()
+        self.db.refresh(unidade)
+
+        return unidade    
 
     def delete_unidade(self, unidade_id: int) -> models.ItensUnidadesModel | HTTPException:
 
@@ -332,6 +386,26 @@ class ItensLogic:
 
         return new_item
     
+
+    def update_item(self, item_id: int, body: schemas.ItensBodySchema) -> models.ItensModel | HTTPException:
+
+        marca = self.marcas_logic.get_marca_by_id(marca_id=body.marcaID)
+        categoria = self.categorias_logic.get_categoria_by_id(categoria_id=body.categoriaID)
+        subcategoria = self.subcategorias_logic.get_sub_categoria_by_id(subcategoria_id=body.subcategoriaID)
+
+        item: models.ItensModel = self.get_item_by_id(item_id=item_id)
+
+        item.nome = body.nome
+        item.descricao = body.descricao
+        item.categoriaID = categoria.id
+        item.subcategoriaID = subcategoria.id
+        item.marcaID = marca.id
+ 
+        self.db.add(item)
+        self.db.commit()
+        self.db.refresh(item)
+
+        return item
 
     def delete_item(self, item_id: int) -> models.ItensModel | HTTPException:
 

@@ -23,6 +23,11 @@ def get_all_categorias(logic: logic.ItensCategoriaLogic = Depends()):
     itens = logic.get_all_categorias()
     return list(map(lambda i: schemas.ItensCategoriasSchema.model_validate(i), itens))
 
+@router.patch("/categorias/{categoria_id}", response_model=schemas.ItensCategoriasSchema)
+def update_categoria(categoria_id: int, body: schemas.ItensCategoriasBodySchema, logic: logic.ItensCategoriaLogic = Depends()):
+    categoria = logic.update_categoria(categoria_id=categoria_id, body=body)
+    return schemas.ItensCategoriasSchema.model_validate(categoria)
+
 @router.delete("/categorias/{categoria_id}", response_model=schemas.ItensCategoriasSchema)
 def delete_categoria(categoria_id: int, logic: logic.ItensCategoriaLogic = Depends()):
     categoria = logic.delete_categoria(categoria_id=categoria_id)
@@ -48,6 +53,11 @@ def get_subcategorias_by_categoria(categoria_id: int, logic: logic.ItensSubCateg
     subcategorias = logic.get_subcategorias_by_categoria(categoria_id=categoria_id)
     return list(map(lambda s: schemas.ItensSubCategoriasSchema.model_validate(s), subcategorias))
 
+@router.patch("/subcategorias/{subcategoria_id}", response_model=schemas.ItensSubCategoriasSchema)
+def update_subcategoria(subcategoria_id: int, body: schemas.ItensSubCategoriasBodySchema, logic: logic.ItensSubCategoriaLogic = Depends()):
+    subcategoria = logic.update_subcategoria(subcategoria_id=subcategoria_id, body=body)
+    return schemas.ItensSubCategoriasSchema.model_validate(subcategoria)
+
 @router.delete("/subcategorias/{subcategoria_id}", response_model=schemas.ItensSubCategoriasSchema)
 def delete_subcategoria(subcategoria_id: int, logic: logic.ItensSubCategoriaLogic = Depends()):
     subcategoria = logic.delete_subcategoria(subcategoria_id=subcategoria_id)
@@ -67,6 +77,11 @@ def get_marca_by_id(marca_id: int, logic: logic.ItensMarcasLogic = Depends()):
 def get_all_marcas(logic: logic.ItensMarcasLogic = Depends()):
     marcas = logic.get_all_marcas()
     return list(map(lambda m: schemas.ItensMarcasSchema.model_validate(m), marcas))
+
+@router.patch("/marcas/{marca_id}", response_model=schemas.ItensMarcasSchema)
+def update_marca(marca_id: int, body: schemas.ItensMarcasBodySchema, logic: logic.ItensMarcasLogic = Depends()):
+    marca = logic.update_marca(marca_id=marca_id, body=body)
+    return schemas.ItensMarcasSchema.model_validate(marca)
 
 @router.delete("/marcas/{marca_id}", response_model=schemas.ItensMarcasSchema)
 def delete_marca(marca_id: int, logic: logic.ItensMarcasLogic = Depends()):
@@ -88,6 +103,11 @@ def get_all_unidades(logic: logic.ItensUnidadesLogic = Depends()):
     unidades = logic.get_all_unidades()
     return map(lambda u: schemas.ItensUnidadesSchema.model_validate(u), unidades)
 
+@router.patch("/unidades/{unidade_id}", response_model=schemas.ItensUnidadesSchema)
+def update_unidade(unidade_id: int, body: schemas.ItensUnidadesBodySchema, logic: logic.ItensUnidadesLogic = Depends()):
+    unidade = logic.update_unidade(unidade_id=unidade_id, body=body)
+    return schemas.ItensUnidadesSchema.model_validate(unidade)
+
 @router.delete("/unidades/{unidade_id}", response_model=schemas.ItensUnidadesSchema)
 def delete_unidade(unidade_id: int, logic: logic.ItensUnidadesLogic = Depends()):
     unidade = logic.delete_unidade(unidade_id=unidade_id)
@@ -107,6 +127,11 @@ def get_item_by_id(item_id: int, logic: logic.ItensLogic = Depends()):
 def get_all_itens(logic: logic.ItensLogic = Depends()):
     itens = logic.get_all_itens()
     return list(map(lambda i: schemas.ItensSchema.model_validate(i), itens))
+
+@router.patch("/{item_id}", response_model=schemas.ItensSchema)
+def upadte_item(item_id: int, body: schemas.ItensBodySchema, logic: logic.ItensLogic = Depends()):
+    item = logic.update_item(item_id=item_id, body=body)
+    return schemas.ItensSchema.model_validate(item)
 
 @router.delete("/{item_id}", response_model=schemas.ItensSchema)
 def delete_item(item_id: int, logic: logic.ItensLogic = Depends()):
