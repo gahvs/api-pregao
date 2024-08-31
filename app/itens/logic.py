@@ -27,7 +27,9 @@ class ItensCategoriaLogic:
 
     def get_all_categorias(self) -> List[models.ItensCategoriasModel] | HTTPException:
 
-        categorias: List[models.ItensCategoriasModel] = self.db.query(models.ItensCategoriasModel).all()
+        categorias: List[models.ItensCategoriasModel] = self.db.query(models.ItensCategoriasModel).filter(
+            models.ItensCategoriasModel.deleted==False
+        ).all()
 
         if categorias == []:
             raise HTTPException(status_code=204, detail=f"Não existem categorias cadastradas")
@@ -75,7 +77,9 @@ class ItensSubCategoriaLogic:
 
     def get_all_subcategorias(self) -> List[models.ItensSubCategoriasModel] | HTTPException:
 
-        subcategorias: List[models.ItensSubCategoriasModel] = self.db.query(models.ItensSubCategoriasModel).all()
+        subcategorias: List[models.ItensSubCategoriasModel] = self.db.query(models.ItensSubCategoriasModel).filter(
+            models.ItensSubCategoriasModel.deleted==False
+        ).all()
 
         if subcategorias == []:
             raise HTTPException(status_code=204, detail=f"Não existem subcategorias cadastrados")
@@ -88,7 +92,8 @@ class ItensSubCategoriaLogic:
         categoria: models.ItensCategoriasModel = self.categoria_logic.get_categoria_by_id(categoria_id=categoria_id)
         
         subcategorias: List[models.ItensSubCategoriasModel] = self.db.query(models.ItensSubCategoriasModel).filter(
-            models.ItensSubCategoriasModel.categoriaID == categoria.id
+            models.ItensSubCategoriasModel.categoriaID == categoria.id,
+            models.ItensSubCategoriasModel.deleted==False
         ).all()
 
         
@@ -143,7 +148,9 @@ class ItensMarcasLogic:
     
     def get_all_marcas(self) -> List[models.ItensMarcasModel] | HTTPException:
 
-        marcas: List[models.ItensMarcasModel] = self.db.query(models.ItensMarcasModel).all()
+        marcas: List[models.ItensMarcasModel] = self.db.query(models.ItensMarcasModel).filter(
+            models.ItensMarcasModel.deleted==False
+        ).all()
 
         if marcas == []:
             raise HTTPException(status_code=204, detail=f"Não existem marcas cadastrados")
@@ -179,7 +186,9 @@ class ItensUnidadesLogic:
     
     def get_all_unidades(self) -> List[models.ItensUnidadesModel] | HTTPException:
 
-        unidades = self.db.query(models.ItensUnidadesModel).all()
+        unidades = self.db.query(models.ItensUnidadesModel).filter(
+            models.ItensUnidadesModel.deleted==False
+        ).all()
 
         if unidades == []:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Nenhuma Unidade cadastrada")
@@ -232,7 +241,9 @@ class ItensLogic:
     
     def get_all_itens(self) -> List[models.ItensModel] | HTTPException:
 
-        itens: List[models.ItensModel] = self.db.query(models.ItensModel).all()
+        itens: List[models.ItensModel] = self.db.query(models.ItensModel).filter(
+            models.ItensModel.deleted==False
+        ).all()
 
         if itens == []:
             raise HTTPException(status_code=204, detail="Não há itens cadastrados")

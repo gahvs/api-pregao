@@ -8,7 +8,7 @@
 ### Atualizacao de Catalogo:
 
 - Adicionar Rota para definicao de Unidades, SubCategorias, Categorias, Marcas e Itens - ``DONE``
-- Adicioanr campos Deleted, CreatedAt, UpdatedAt nas entidades Unidades, SubCategorias, Categorias, Marcas e Itens
+- Adicioanr campos Deleted, CreatedAt, UpdatedAt nas entidades Unidades, SubCategorias, Categorias, Marcas e Itens - ``DONE``
 - Adicioanr Rotas para Alteração e Deleção nas entidades Unidades, SubCategorias, Categorias, Marcas e Itens
 
 ### Maior Flexibilidade na Criação de Solicitações de Pregão:
