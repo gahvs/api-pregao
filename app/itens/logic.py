@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException
 from http import HTTPStatus
 from database.instance import get_db
 from typing import List
-from . import models
+from . import models, schemas
 
 class ItensCategoriaLogic:
     '''
@@ -121,6 +121,16 @@ class ItensMarcasLogic:
             raise HTTPException(status_code=204, detail=f"Não existem marcas cadastrados")
 
         return marcas
+    
+    def create_marca(self, body: schemas.ItensMarcasBodySchema) -> models.ItensMarcasModel:
+
+        new_marca = models.ItensMarcasModel(nome=body.nome)
+
+        self.db.add(new_marca)
+        self.db.commit()
+        self.db.refresh(new_marca)
+
+        return new_marca
     
 
 class ItensUnidadesLogic: 

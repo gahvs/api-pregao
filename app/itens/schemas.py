@@ -20,6 +20,13 @@ class ItensSubCategoriasSchema(BaseModel):
         orm_mode = True
         from_attributes = True       
 
+class ItensMarcasBodySchema(BaseModel):
+
+    nome: str
+
+    class Config:
+        orm_mode = True
+        from_attributes = True    
         
 class ItensMarcasSchema(BaseModel):
 

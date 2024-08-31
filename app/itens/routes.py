@@ -34,6 +34,11 @@ def get_subcategorias_by_categoria(categoria_id: int, logic: logic.ItensSubCateg
     subcategorias = logic.get_subcategorias_by_categoria(categoria_id=categoria_id)
     return list(map(lambda s: schemas.ItensSubCategoriasSchema.model_validate(s), subcategorias))
 
+@router.post("/marcas/nova", response_model=schemas.ItensMarcasSchema)
+def create_marca(body: schemas.ItensMarcasBodySchema, logic: logic.ItensMarcasLogic = Depends()):
+    marca = logic.create_marca(body=body)
+    return schemas.ItensMarcasSchema.model_validate(marca)
+
 @router.get("/marcas/{marca_id}", response_model=schemas.ItensMarcasSchema)
 def get_marca_by_id(marca_id: int, logic: logic.ItensMarcasLogic = Depends()):
     marca = logic.get_marca_by_id(marca_id=marca_id)
