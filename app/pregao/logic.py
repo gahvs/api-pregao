@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException
 from database.instance import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import asc
-from utils import errors
+from utils.http_exceptions import NoContentException, ResourceNotFoundException, ResourceConflictException, ResourceExpectationFailedException
 from typing import List
 from itertools import chain
 from collections import defaultdict
@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from usuarios.logic import UserLogic
 from usuarios.models import UserModel
 from solicitacoes.logic import SolicitacaoLogic, SolicitacaoItensLogic, SolicitacaoParticipantesLogic
-from solicitacoes.models import SolicitacoesModel, SolicitacoesItensModel, SolicitacoesParticipantesModel
+from solicitacoes.models import SolicitacoesItensModel, SolicitacoesParticipantesModel
 from itens.logic import ItensLogic, ItensUnidadesLogic
 from . import models
 from . import schemas
@@ -103,7 +103,7 @@ class PregaoLogic:
         pregao = self.db.query(models.PregaoModel).filter(models.PregaoModel.id == pregao_id).first()
         
         if pregao is None:
-            raise HTTPException(status_code=404, detail=errors.not_found_message("PREGAO", pregao_id))
+            raise ResourceNotFoundException()
         
         return pregao
 
@@ -186,7 +186,7 @@ class PregaoParticipantesLogic:
         ).first()
 
         if pregao_participante == None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=errors.not_found_message(resource_name="Participante de Pregão", resource_id=pregao_participante_id))
+            raise ResourceNotFoundException()
         
         return pregao_participante
 
@@ -199,7 +199,7 @@ class PregaoParticipantesLogic:
         ).all()
 
         if participantes == []:
-            raise HTTPException(status_code=204, detail=f"Não há participantes inscritos no Pregão {pregao_id}")
+            raise NoContentException()
 
         return participantes
 
@@ -211,7 +211,7 @@ class PregaoParticipantesLogic:
         ).first()
 
         if participante == None:
-            raise HTTPException(status_code=404, detail=f"O Pregão {pregao_id} não possui Participante com id {usuario_id}")
+            raise NoContentException()
 
         return participante
     
@@ -296,7 +296,7 @@ class PregaoItensLogic:
         ).first()
 
         if pregao_item == None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=errors.not_found_message(resource_name="Item de Pregão", resource_id=pregao_item_id))
+            raise ResourceNotFoundException()
         
         return pregao_item
     
@@ -308,7 +308,7 @@ class PregaoItensLogic:
         ).first()
 
         if pregao_item == None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND)
+            raise ResourceNotFoundException()
         
         return pregao_item
     
@@ -324,7 +324,7 @@ class PregaoItensLogic:
     def create_pregao_item(self, pregao_id: int, body: schemas.PregaoItensBodySchema) -> models.PregaoItensModel | HTTPException:
 
         if self.pregao_item_already_setted(pregao_id=pregao_id, item_id=body.itemID):
-            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail="Item já adicionado ao Pregão")
+            raise ResourceConflictException()
         
         pregao = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)
         participante = self.participantes_logic.get_pregao_participante_by_id(pregao_participante_id=body.participanteID)
@@ -332,7 +332,7 @@ class PregaoItensLogic:
         unidade = self.unidades_logic.get_unidade_by_id(unidade_id=body.unidadeID)
 
         if not self.participantes_logic.participante_is_comprador(participante=participante):
-            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED)
+            raise ResourceExpectationFailedException()
         
         new_pregao_item = models.PregaoItensModel(
             pregaoID=pregao.id,
@@ -352,7 +352,7 @@ class PregaoItensLogic:
 
         pregao_item = self.get_pregao_item_by_id(pregao_item_id=pregao_item_id)
         if pregao_item.deleted:
-            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED)
+            raise ResourceExpectationFailedException()
         
         pregao_item.projecaoQuantidade = body.projecaoQuantidade if body.projecaoQuantidade else pregao_item.projecaoQuantidade
 
@@ -372,7 +372,7 @@ class PregaoItensLogic:
         ).all()
 
         if itens == []:
-            raise HTTPException(status_code=HTTPStatus.NO_CONTENT)
+            raise NoContentException()
         
         return itens
     
@@ -426,7 +426,7 @@ class PregaoLancesLogic:
         )
 
         if lance_vencedor == None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Não há Lances para o Pregão {pregao_id}")
+            raise ResourceNotFoundException()
 
         return lance_vencedor
 
@@ -442,7 +442,7 @@ class PregaoLancesLogic:
         )
 
         if lances == []:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Não há Lances para o Pregão {pregao_id}")
+            raise ResourceNotFoundException()
         
         return lances
     
@@ -481,7 +481,7 @@ class PregaoLancesLogic:
         pregao_participante = self.pregao_participantes_logic.get_pregao_participante_by_id(pregao_participante_id=body.participanteID)
 
         if pregao_participante.participanteTipo != self.pregao_participantes_logic.PARTICIPANTE_FORNECEDOR_TIPO:
-            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O Participante {pregao_participante.id} do Pregão {pregao_id} não é {self.pregao_participantes_logic.PARTICIPANTE_FORNECEDOR_TIPO} do Pregão")
+            raise ResourceExpectationFailedException()
 
         # Aplicar aqui as restricoes de lance e verificoes de datas
         # Verificar status do Pregao para aceite de lances, etc.
@@ -493,17 +493,17 @@ class PregaoLancesLogic:
 
             # Verificando se o valor do lance é menor que o lance vencedor atual
             if body.valorLance >= lance_vencedor.valorLance:
-                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Valor de Lance ({body.valorLance}) maior ou igual que o Lance Vencedor Atual ({lance_vencedor.valorLance})")
+                raise ResourceExpectationFailedException()
             
             # Verificando se a diferença mínima do valor do lance foi antendida
             diferenca_valor = abs(lance_vencedor.valorLance - body.valorLance)
             if diferenca_valor < regra.diferencaDeValorMinima:
-                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"A diferença de Valor para o Lance Vencedor Atual é menor que o Limite Mínimo de {regra.diferencaDeValorMinima}")
+                raise ResourceExpectationFailedException()
             
             # Verificando se o numero máximo de lances por minuto não foi excedido
             fornecedor_lances = self.get_fornecedor_recent_lances(pregao_id=pregao_id, participante_id=body.participanteID, intervalo_minutos=regra.intervaloDeTempoEmMinutos)
             if len(fornecedor_lances) >= regra.lancesPorIntervaloDeTempo:
-                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Número máximo de Lances Excedido. Permitido são {regra.lancesPorIntervaloDeTempo} Lances a cada {regra.diferencaDeValorMinima} minutos")
+                raise ResourceExpectationFailedException()
         
         new_pregao_lance = models.PregaoLancesModel(
             pregaoID=pregao.id,
@@ -558,12 +558,12 @@ class PregaoConversoesLogic:
     def criar_pregao_por_conversao(self, body: schemas.PregaoCreateSchema) -> models.PregaoModel | HTTPException:
 
         if body.solicitacoes == []:
-            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail="É necessário enviar os ID's de Solicitação")
+            raise ResourceExpectationFailedException()
         
         solicitacoes = list(map(lambda solicitacao_id: self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id), body.solicitacoes))
         for solicitacao in solicitacoes:
             if solicitacao.status == self.solicitacao_logic.STATUS_CONVERTIDO:
-                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Solicitacao {solicitacao.id} já convertida em Pregão")
+                raise ResourceExpectationFailedException()
 
         solicitacoes_itens = list(map(lambda solicitacao: self.solicitacao_itens_logic.get_solicitacao_itens(solicitacao_id=solicitacao.id), solicitacoes))
         solicitacoes_participantes = list(map(lambda solicitacao: self.solicitacao_participantes_logic.get_solicitacao_participantes(solicitacao_id=solicitacao.id), solicitacoes))
@@ -636,7 +636,7 @@ class PregaoConversoesLogic:
             
             unidades = {item.unidadeID for item in itens_group}
             if len(unidades) > 1:
-                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O Item {itens_group[0].itemID} possui inconsistência de Unidade")
+                raise ResourceExpectationFailedException()
             
             item_sample = itens_group[0]
 
@@ -666,7 +666,7 @@ class PregaoConversoesLogic:
         for participante_group in participantes_matrix:
             participacao_tipo = {participante.participanteTipo for participante in participante_group}
             if len(participacao_tipo) > 1:
-                raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O Usuário {participante_group[0].usuarioID} possui inconsistência de Participação")
+                raise ResourceExpectationFailedException()
             
             participante_sample = participante_group[0]
             pregao_participantes.append(models.PregaoParticipantesModel(

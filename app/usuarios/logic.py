@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from database.instance import get_db
 from itens.logic import ItensCategoriaLogic
-from utils import errors
+from utils.http_exceptions import ResourceNotFoundException, NoContentException
 from . import models
 from . import schemas
 
@@ -21,7 +21,7 @@ class UserLogic:
         user = self.db.query(models.UserModel).filter(models.UserModel.id == user_id).first()
 
         if user is None:
-            raise HTTPException(status_code=404, detail=errors.not_found_message("USUARIO", user_id))
+            raise ResourceNotFoundException()
         
         return user
     
@@ -61,7 +61,7 @@ class UsuarioInteresses:
         ).first()
 
         if interesse_compra == None:
-            raise HTTPException(status_code=404, detail=f"Não há interesse de compra definido para o Usuário {usuario_id} e Categoria {categoria_id}")
+            raise ResourceNotFoundException()
 
         return interesse_compra 
 
@@ -75,7 +75,7 @@ class UsuarioInteresses:
         ).first()
 
         if interesse_compra == None:
-            raise HTTPException(status_code=404, detail=f"Não há interesse de venda definido para o Usuário {usuario_id} e Categoria {categoria_id}")
+            raise ResourceNotFoundException()
 
         return interesse_compra 
     
@@ -137,6 +137,6 @@ class UsuarioInteresses:
         )
 
         if interesses == []:
-            raise HTTPException(status_code=204, detail=f"Usuário {usuario_id} não possui Interesses cadstrados")
+            raise NoContentException()
         
         return interesses

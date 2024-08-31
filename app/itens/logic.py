@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
-from http import HTTPStatus
 from database.instance import get_db
 from typing import List
+from utils.http_exceptions import NoContentException, ResourceNotFoundException, ResourceExpectationFailedException
 from . import models, schemas
 
 class ItensCategoriaLogic:
@@ -21,7 +21,7 @@ class ItensCategoriaLogic:
         ).first()
 
         if categoria is None:
-            raise HTTPException(status_code=404, detail=f"Não foi encontrada Categeoria com o ID {categoria_id}")
+            raise ResourceNotFoundException()
         
         return categoria
 
@@ -29,10 +29,10 @@ class ItensCategoriaLogic:
 
         categorias: List[models.ItensCategoriasModel] = self.db.query(models.ItensCategoriasModel).filter(
             models.ItensCategoriasModel.deleted==False
-        ).all()
+        ).order_by(models.ItensCategoriasModel.id).all()
 
         if categorias == []:
-            raise HTTPException(status_code=204, detail=f"Não existem categorias cadastradas")
+            raise NoContentException()
 
         return categorias
     
@@ -48,6 +48,22 @@ class ItensCategoriaLogic:
 
         return new_categoria
 
+
+    def delete_categoria(self, categoria_id: int) -> models.ItensCategoriasModel | HTTPException:
+
+        categoria: models.ItensCategoriasModel = self.get_categoria_by_id(categoria_id=categoria_id)
+
+        if categoria.deleted:
+            return categoria
+
+        categoria.deleted = True
+
+        self.db.add(categoria)
+        self.db.commit()
+        self.db.refresh(categoria)
+        
+        return categoria
+    
 
 class ItensSubCategoriaLogic:
     '''
@@ -70,7 +86,7 @@ class ItensSubCategoriaLogic:
         ).first()
 
         if subcategoria is None:
-            raise HTTPException(status_code=404, detail=f"Não foi encontrada Sub Categoria com o ID {subcategoria_id}")
+            raise ResourceNotFoundException()
         
         return subcategoria
 
@@ -79,10 +95,10 @@ class ItensSubCategoriaLogic:
 
         subcategorias: List[models.ItensSubCategoriasModel] = self.db.query(models.ItensSubCategoriasModel).filter(
             models.ItensSubCategoriasModel.deleted==False
-        ).all()
+        ).order_by(models.ItensSubCategoriasModel.id).all()
 
         if subcategorias == []:
-            raise HTTPException(status_code=204, detail=f"Não existem subcategorias cadastrados")
+            raise NoContentException()
 
         return subcategorias
     
@@ -98,7 +114,7 @@ class ItensSubCategoriaLogic:
 
         
         if subcategorias == []:
-            raise HTTPException(status_code=404, detail=f"Não foram encontradas Sub Categorias para a categoria {categoria.nome}")
+            raise NoContentException()
 
         return subcategorias    
 
@@ -118,6 +134,21 @@ class ItensSubCategoriaLogic:
 
         return new_subcategoria
     
+
+    def delete_subcategoria(self, subcategoria_id: int) -> models.ItensSubCategoriasModel | HTTPException:
+
+        subcategoria: models.ItensSubCategoriasModel = self.get_sub_categoria_by_id(subcategoria_id=subcategoria_id)
+
+        if subcategoria.deleted:
+            return subcategoria
+        
+        subcategoria.deleted = True
+
+        self.db.add(subcategoria)
+        self.db.commit()
+        self.db.refresh(subcategoria)
+
+        return subcategoria
 
 class ItensMarcasLogic:
     '''
@@ -142,7 +173,7 @@ class ItensMarcasLogic:
         ).first()
 
         if marca is None:
-            raise HTTPException(status_code=404, detail=f"Não foi encontrada Marca com o ID {marca_id}")
+            raise ResourceNotFoundException()
 
         return marca
     
@@ -150,10 +181,10 @@ class ItensMarcasLogic:
 
         marcas: List[models.ItensMarcasModel] = self.db.query(models.ItensMarcasModel).filter(
             models.ItensMarcasModel.deleted==False
-        ).all()
+        ).order_by(models.ItensMarcasModel.id).all()
 
         if marcas == []:
-            raise HTTPException(status_code=204, detail=f"Não existem marcas cadastrados")
+            raise NoContentException()
 
         return marcas
     
@@ -167,6 +198,21 @@ class ItensMarcasLogic:
 
         return new_marca
     
+    def delete_marca(self, marca_id: int) -> models.ItensMarcasModel | HTTPException:
+        
+        marca: models.ItensMarcasModel = self.get_marca_by_id(marca_id=marca_id)
+
+        if marca.deleted:
+            return marca
+        
+        marca.deleted = True
+
+        self.db.add(marca)
+        self.db.commit()
+        self.db.refresh(marca)
+
+        return marca
+
 
 class ItensUnidadesLogic: 
 
@@ -180,7 +226,7 @@ class ItensUnidadesLogic:
         ).first()
 
         if unidade == None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Unidade com id {unidade_id} não encontrada")
+            raise ResourceNotFoundException()
 
         return unidade
     
@@ -188,17 +234,17 @@ class ItensUnidadesLogic:
 
         unidades = self.db.query(models.ItensUnidadesModel).filter(
             models.ItensUnidadesModel.deleted==False
-        ).all()
+        ).order_by(models.ItensUnidadesModel.id).all()
 
         if unidades == []:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Nenhuma Unidade cadastrada")
+            raise NoContentException()
         
         return unidades
     
     def create_unidade(self, body: schemas.ItensUnidadesBodySchema) -> models.ItensUnidadesModel | HTTPException:
 
         if len(body.unidade) > 3:
-            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail="O campo Unidade deve conter até 3 caracteres")
+            raise ResourceExpectationFailedException()
         
         new_unidade: models.ItensUnidadesModel = models.ItensUnidadesModel(
             unidade=body.unidade,
@@ -211,6 +257,22 @@ class ItensUnidadesLogic:
 
         return new_unidade
     
+
+    def delete_unidade(self, unidade_id: int) -> models.ItensUnidadesModel | HTTPException:
+
+        unidade: models.ItensUnidadesModel = self.get_unidade_by_id(unidade_id=unidade_id)
+
+        if unidade.deleted:
+            return unidade
+        
+        unidade.deleted = True
+
+        self.db.add(unidade)
+        self.db.commit()
+        self.db.refresh(unidade)
+
+        return unidade
+
 
 class ItensLogic:
     '''
@@ -235,7 +297,7 @@ class ItensLogic:
         ).first()
 
         if item is None:
-            raise HTTPException(status_code=404, detail=f"Não foi encontrado Item com o ID {item_id}")
+            raise ResourceNotFoundException()
         
         return item
     
@@ -243,10 +305,10 @@ class ItensLogic:
 
         itens: List[models.ItensModel] = self.db.query(models.ItensModel).filter(
             models.ItensModel.deleted==False
-        ).all()
+        ).order_by(models.ItensModel.id).all()
 
         if itens == []:
-            raise HTTPException(status_code=204, detail="Não há itens cadastrados")
+            raise NoContentException()
         
         return itens
     
@@ -269,3 +331,19 @@ class ItensLogic:
         self.db.refresh(new_item)
 
         return new_item
+    
+
+    def delete_item(self, item_id: int) -> models.ItensModel | HTTPException:
+
+        item: models.ItensModel = self.get_item_by_id(item_id=item_id)
+
+        if item.deleted:
+            return item
+        
+        item.deleted = True
+
+        self.db.add(item)
+        self.db.commit()
+        self.db.refresh(item)
+
+        return item

@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from datetime import datetime
-from utils import errors
 
 class PregaoSchema(BaseModel):
 
@@ -48,7 +47,7 @@ class PregaoCreateSchema(BaseModel):
                 raise ValueError("DATETIME FORMAT INCORRECT")
             
         else:
-            raise ValueError(errors.invalid_type(resource_name="dataHoraInicio | dataHoraFim",expected_type="String",received_type=type(value)))
+            raise ValueError("DATETIME FORMAT INCORRECT")
 
 
 class PregaoParticipanteBodySchema(BaseModel):

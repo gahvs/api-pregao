@@ -23,6 +23,11 @@ def get_all_categorias(logic: logic.ItensCategoriaLogic = Depends()):
     itens = logic.get_all_categorias()
     return list(map(lambda i: schemas.ItensCategoriasSchema.model_validate(i), itens))
 
+@router.delete("/categorias/{categoria_id}", response_model=schemas.ItensCategoriasSchema)
+def delete_categoria(categoria_id: int, logic: logic.ItensCategoriaLogic = Depends()):
+    categoria = logic.delete_categoria(categoria_id=categoria_id)
+    return schemas.ItensCategoriasSchema.model_validate(categoria)
+
 @router.post("/subcategorias/nova", response_model=schemas.ItensSubCategoriasSchema)
 def create_subcategoria(body: schemas.ItensSubCategoriasBodySchema, logic: logic.ItensSubCategoriaLogic = Depends() ):
     subcategoria = logic.create_subcategoria(body=body)
@@ -43,6 +48,11 @@ def get_subcategorias_by_categoria(categoria_id: int, logic: logic.ItensSubCateg
     subcategorias = logic.get_subcategorias_by_categoria(categoria_id=categoria_id)
     return list(map(lambda s: schemas.ItensSubCategoriasSchema.model_validate(s), subcategorias))
 
+@router.delete("/subcategorias/{subcategoria_id}", response_model=schemas.ItensSubCategoriasSchema)
+def delete_subcategoria(subcategoria_id: int, logic: logic.ItensSubCategoriaLogic = Depends()):
+    subcategoria = logic.delete_subcategoria(subcategoria_id=subcategoria_id)
+    return schemas.ItensSubCategoriasSchema.model_validate(subcategoria)
+
 @router.post("/marcas/nova", response_model=schemas.ItensMarcasSchema)
 def create_marca(body: schemas.ItensMarcasBodySchema, logic: logic.ItensMarcasLogic = Depends()):
     marca = logic.create_marca(body=body)
@@ -57,6 +67,11 @@ def get_marca_by_id(marca_id: int, logic: logic.ItensMarcasLogic = Depends()):
 def get_all_marcas(logic: logic.ItensMarcasLogic = Depends()):
     marcas = logic.get_all_marcas()
     return list(map(lambda m: schemas.ItensMarcasSchema.model_validate(m), marcas))
+
+@router.delete("/marcas/{marca_id}", response_model=schemas.ItensMarcasSchema)
+def delete_marca(marca_id: int, logic: logic.ItensMarcasLogic = Depends()):
+    marca = logic.delete_marca(marca_id=marca_id)
+    return schemas.ItensMarcasSchema.model_validate(marca)
 
 @router.post("/unidades/nova", response_model=schemas.ItensUnidadesSchema)
 def create_unidade(body: schemas.ItensUnidadesBodySchema, logic: logic.ItensUnidadesLogic = Depends()):
@@ -73,6 +88,11 @@ def get_all_unidades(logic: logic.ItensUnidadesLogic = Depends()):
     unidades = logic.get_all_unidades()
     return map(lambda u: schemas.ItensUnidadesSchema.model_validate(u), unidades)
 
+@router.delete("/unidades/{unidade_id}", response_model=schemas.ItensUnidadesSchema)
+def delete_unidade(unidade_id: int, logic: logic.ItensUnidadesLogic = Depends()):
+    unidade = logic.delete_unidade(unidade_id=unidade_id)
+    return schemas.ItensUnidadesSchema.model_validate(unidade)
+
 @router.post("/novo", response_model=schemas.ItensSchema)
 def create_item(body: schemas.ItensBodySchema, logic: logic.ItensLogic = Depends()):
     item = logic.create_item(body=body)
@@ -87,3 +107,8 @@ def get_item_by_id(item_id: int, logic: logic.ItensLogic = Depends()):
 def get_all_itens(logic: logic.ItensLogic = Depends()):
     itens = logic.get_all_itens()
     return list(map(lambda i: schemas.ItensSchema.model_validate(i), itens))
+
+@router.delete("/{item_id}", response_model=schemas.ItensSchema)
+def delete_item(item_id: int, logic: logic.ItensLogic = Depends()):
+    item = logic.delete_item(item_id=item_id)
+    return schemas.ItensSchema.model_validate(item)
