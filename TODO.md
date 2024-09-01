@@ -14,9 +14,10 @@
 ### Maior Flexibilidade na Criação de Solicitações de Pregão:
 - Remover restrição de existência de Item na criação da solicitação - ``DONE``
 - Atualizar TabelaPG, model e schemas dos Itens de Solicitacao - ``DONE``
-- Criar operacoes de Itens - adicionar e remover (pensar no alterar)
+- Criar operacoes de Itens - adicionar e remover (pensar no alterar) - ``DONE``
 
 ### Maior Flexibilidade na conversão de Solicitações em Pregões:
+- Recriar funcionalidade de conversão de Solicitação em Pregao
 - Adicionar funcionalidade de extensão de Pregão a partir de Solicitação
 
 ### Ajuste dos Status do Pregão

@@ -95,6 +95,17 @@ class SolicitacoesItensReferenciasSchema(BaseModel):
         orm_mode = True
         from_attributes = True
 
+
+class SolicitacaoItemOverviewResponse(BaseModel):
+
+    id: int
+    possuiReferenciaItem: bool
+    possuiReferenciaCategoria: bool
+    possuiReferenciaSubcategoria: bool
+    possuiReferenciaUnidade: bool
+    possuiReferenciaMarca: bool
+
+
 class SolicitacoesParticipantesBodySchema(BaseModel):
 
     usuarioID: int

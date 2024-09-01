@@ -38,25 +38,29 @@ def create_solicitacao_item(solicitacao_id: int, body: schemas.SolicitacoesItens
     item = logic.create_solicitacao_item(solicitacao_id=solicitacao_id, body=body)
     return schemas.SolicitacoesItensResponseSchema.model_validate(item)
 
+
 @router.post("/itens/{solicitacao_item_id}/alterar/referencias", response_model=schemas.SolicitacoesItensResponseSchema)
 def update_item_referencia(solicitacao_item_id: int, body: schemas.SolicitacoesItensReferenciasSchema, logic: logic.SolicitacaoItensLogic = Depends()):
     item = logic.update_solicitacao_referencia_if_exists(solicitacao_item_id=solicitacao_item_id, body=body)
     return schemas.SolicitacoesItensResponseSchema.model_validate(item)
 
-# @router.patch("/itens/{solicitacao_item_id}/alterar", response_model=schemas.SolicitacoesItensResponseSchema)
-# def update_solicitacao_item(solicitacao_item_id: int, body: schemas.SolicitacoesItensBodyUpdateSchema, logic: logic.SolicitacaoItensLogic = Depends()):
-#     item = logic.update_solicitacao_item(solicitacao_item_id=solicitacao_item_id, body=body)
-#     return schemas.SolicitacoesItensResponseSchema.model_validate(item)
 
-# @router.delete("/itens/{solicitacao_item_id}", response_model=schemas.SolicitacoesItensResponseSchema)
-# def delete_solicitacao_item(solicitacao_item_id: int, logic: logic.SolicitacaoItensLogic = Depends()):
-#     item_deleted = logic.delete_solicitacao_itens(solicitacao_item_id=solicitacao_item_id)
-#     return schemas.SolicitacoesItensResponseSchema.model_validate(item_deleted)
+@router.get("/itens/{solicitacao_item_id}/referencias/diagnostico", response_model=schemas.SolicitacaoItemOverviewResponse)
+def get_solicitacao_item_overview(solicitacao_item_id: int, logic: logic.SolicitacaoItensLogic = Depends()):
+    overview: dict = logic.get_item_referencia_overview(solicitacao_item_id=solicitacao_item_id)
+    return overview
 
-# @router.get("/{solicitacao_id}/itens", response_model=List[schemas.SolicitacoesItensResponseSchema])
-# def get_solicitacao_itens(solicitacao_id: int, logic: logic.SolicitacaoItensLogic = Depends()):
-#     itens = logic.get_solicitacao_itens(solicitacao_id=solicitacao_id)
-#     return list(map(lambda i: schemas.SolicitacoesItensResponseSchema.model_validate(i), itens))
+
+@router.delete("/itens/{solicitacao_item_id}", response_model=schemas.SolicitacoesItensResponseSchema)
+def delete_solicitacao_item(solicitacao_item_id: int, logic: logic.SolicitacaoItensLogic = Depends()):
+    item_deleted = logic.delete_solicitacao_itens(solicitacao_item_id=solicitacao_item_id)
+    return schemas.SolicitacoesItensResponseSchema.model_validate(item_deleted)
+
+
+@router.get("/{solicitacao_id}/itens", response_model=List[schemas.SolicitacoesItensResponseSchema])
+def get_solicitacao_itens(solicitacao_id: int, logic: logic.SolicitacaoItensLogic = Depends()):
+    itens = logic.get_solicitacao_itens(solicitacao_id=solicitacao_id)
+    return list(map(lambda i: schemas.SolicitacoesItensResponseSchema.model_validate(i), itens))
 
 
 

@@ -305,7 +305,7 @@ class SolicitacaoItensLogic:
         return solicitacao_item    
 
     def update_solicitacao_referencia_if_exists(self, solicitacao_item_id: int, body: schemas.SolicitacoesItensReferenciasSchema) -> models.SolicitacoesItensModel | HTTPException:
-
+        print('item de solicitacao:', solicitacao_item_id)
         solicitacao_item = self.get_solicitacao_item_by_id(solicitacao_item_id=solicitacao_item_id)
         
         if body.itemReferenciaID is not None:
@@ -333,6 +333,21 @@ class SolicitacaoItensLogic:
         self.db.refresh(solicitacao_item)
 
         return solicitacao_item
+
+    
+    def get_item_referencia_overview(self, solicitacao_item_id: int) -> dict | HTTPException:
+
+        solicitacao_item = self.get_solicitacao_item_by_id(solicitacao_item_id=solicitacao_item_id)
+
+        return {
+            'id': solicitacao_item.id,
+            'possuiReferenciaItem': solicitacao_item.itemReferenciaID != None,
+            'possuiReferenciaCategoria': solicitacao_item.categoriaReferenciaID != None,
+            'possuiReferenciaSubcategoria': solicitacao_item.subcategoriaReferenciaID != None,
+            'possuiReferenciaUnidade': solicitacao_item.unidadeReferenciaID != None,
+            'possuiReferenciaMarca': solicitacao_item.marcaReferenciaID != None
+        }
+
 
     def get_solicitacao_itens(self, solicitacao_id: int) -> List[models.SolicitacoesItensModel] | HTTPException:
 
