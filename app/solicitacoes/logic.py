@@ -2,9 +2,10 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from database.instance import get_db
 from usuarios.logic import UserLogic
-from itens.logic import ItensLogic, ItensUnidadesLogic
+from itens.logic import ItensLogic, ItensUnidadesLogic, ItensCategoriaLogic, ItensSubCategoriaLogic, ItensMarcasLogic
 from typing import List
 from http import HTTPStatus
+from utils.http_exceptions import NoContentException, ResourceNotFoundException, ResourceExpectationFailedException, ResourceConflictException
 from . import models
 from . import schemas
 
@@ -226,13 +227,19 @@ class SolicitacaoItensLogic:
                  solicitacao_logic: SolicitacaoLogic = Depends(SolicitacaoLogic),
                  participante_logic: SolicitacaoParticipantesLogic = Depends(SolicitacaoParticipantesLogic),
                  itens_logic: ItensLogic = Depends(ItensLogic),
-                 unidades_logic: ItensUnidadesLogic = Depends(ItensUnidadesLogic)
+                 unidades_logic: ItensUnidadesLogic = Depends(ItensUnidadesLogic),
+                 categorias_logic: ItensCategoriaLogic = Depends(ItensCategoriaLogic),
+                 subcategorias_logic: ItensSubCategoriaLogic = Depends(ItensSubCategoriaLogic),
+                 itens_marcas_logic: ItensMarcasLogic = Depends(ItensMarcasLogic)
             ) -> None:
         self.db: Session = db
         self.itens_logic: ItensLogic = itens_logic
         self.solicitacao_logic: SolicitacaoLogic = solicitacao_logic
         self.participante_logic: SolicitacaoParticipantesLogic = participante_logic
         self.unidades_logic: ItensUnidadesLogic = unidades_logic
+        self.categorias_logic: ItensCategoriaLogic = categorias_logic
+        self.subcategorias_logic: ItensSubCategoriaLogic = subcategorias_logic
+        self.itens_marcas_logic: ItensMarcasLogic = itens_marcas_logic
 
 
     def get_solicitacao_item_by_id(self, solicitacao_item_id: int) -> models.SolicitacoesItensModel | HTTPException:
@@ -245,51 +252,26 @@ class SolicitacaoItensLogic:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Não existem Item de Solicitação com o ID {solicitacao_item_id}")
         
         return solicitacao_item
-
-    
-    def get_solicitacao_item_using_solicitacao_item(self, solicitacao_id: int, item_id: int) -> models.SolicitacoesItensModel | HTTPException:
-
-        solicitacao_item = self.db.query(models.SolicitacoesItensModel).filter(
-            models.SolicitacoesItensModel.solicitacaoID==solicitacao_id,
-            models.SolicitacoesItensModel.itemID==item_id
-        ).first()
-
-        if solicitacao_item == None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"O Item {item_id} não foi adicionado à Solicitação {solicitacao_id}")
-        
-        return solicitacao_item
-
-
-    def solicitacao_item_already_added(self, solicitacao_id: int, item_id: int) -> bool:
-
-        solicitacao_item = self.db.query(models.SolicitacoesItensModel).filter(
-            models.SolicitacoesItensModel.solicitacaoID==solicitacao_id,
-            models.SolicitacoesItensModel.itemID==item_id
-        ).first()
-        
-        return solicitacao_item != None
     
 
-    def create_solicitacao_item(self, solicitacao_id: int, body: schemas.SolicitacoesItensBodySchema) -> models.SolicitacoesItensModel | HTTPException:
-        
-        if self.solicitacao_item_already_added(solicitacao_id=solicitacao_id, item_id=body.itemID):
-            raise HTTPException(status_code=HTTPStatus.NOT_ACCEPTABLE, detail=f"O Item {body.itemID} já foi adicionado à Solicitação, se necessário altere-o")
+    def create_solicitacao_item(self, solicitacao_id: int, body: schemas.SolicitacoesItensBodySchema) -> models.SolicitacoesItensModel | HTTPException:    
 
-        solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)        
+        solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
         participante = self.participante_logic.get_solicitacao_participante_by_id(solicitacao_participante_id=body.participanteID)
-        item = self.itens_logic.get_item_by_id(item_id=body.itemID)
-        unidade = self.unidades_logic.get_unidade_by_id(unidade_id=body.unidadeID)
-
-        if not self.participante_logic.participante_is_comprador(participante=participante):
-            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"Usuário não participa como Comprador da Solicitacao")
 
         new_solicitacao_item = models.SolicitacoesItensModel(
             solicitacaoID=solicitacao.id,
             criadoPor=participante.id,
-            itemID=item.id,
-            unidadeID=unidade.id,
             projecaoQuantidade=body.projecaoQuantidade,
+            itemNome=body.itemNome,
+            itemDescricao=body.itemDescricao,
+            itemCategoria=body.itemUnidade,
+            itemSubcategoria=body.itemSubcategoria,
+            itemUnidade=body.itemUnidade,
+            itemMarca=body.itemMarca,
         )
+    
+        new_solicitacao_item = self.create_solicitacao_referencia_if_exists(solicitacao_item=new_solicitacao_item, body=body)
 
         self.db.add(new_solicitacao_item)
         self.db.commit()
@@ -298,20 +280,59 @@ class SolicitacaoItensLogic:
         return new_solicitacao_item
     
 
-    def update_solicitacao_item(self, solicitacao_item_id: int, body: schemas.SolicitacoesItensBodyUpdateSchema) -> models.SolicitacoesItensModel | HTTPException:
+    def create_solicitacao_referencia_if_exists(self, solicitacao_item: models.SolicitacoesItensModel, body: schemas.SolicitacoesItensBodySchema) -> models.SolicitacoesItensModel:
+        
+        if body.itemReferenciaID is not None:
+            item = self.itens_logic.get_item_by_id(item_id=body.itemReferenciaID)
+            solicitacao_item.itemReferenciaID = item.id
+        
+        if body.categoriaReferenciaID is not None:
+            categoria = self.categorias_logic.get_categoria_by_id(categoria_id=body.categoriaReferenciaID)
+            solicitacao_item.categoriaReferenciaID = categoria.id
+
+        if body.subcategoriaReferenciaID is not None:
+            subcategoria = self.subcategorias_logic.get_sub_categoria_by_id(subcategoria_id=body.subcategoriaReferenciaID)
+            solicitacao_item.subcategoriaReferenciaID = subcategoria.id
+        
+        if body.unidadeReferenciaID is not None:
+            unidade = self.unidades_logic.get_unidade_by_id(unidade_id=body.unidadeReferenciaID)
+            solicitacao_item.unidadeReferenciaID = unidade.id
+        
+        if body.marcaReferenciaID is not None:
+            marca = self.itens_marcas_logic.get_marca_by_id(marca_id=body.marcaReferenciaID)
+            solicitacao_item.marcaReferenciaID = marca.id
+
+        return solicitacao_item    
+
+    def update_solicitacao_referencia_if_exists(self, solicitacao_item_id: int, body: schemas.SolicitacoesItensReferenciasSchema) -> models.SolicitacoesItensModel | HTTPException:
 
         solicitacao_item = self.get_solicitacao_item_by_id(solicitacao_item_id=solicitacao_item_id)
-        if solicitacao_item.deleted:
-            raise HTTPException(status_code=HTTPStatus.EXPECTATION_FAILED, detail=f"O Item {solicitacao_item_id} foi excluído da Solicitação")
+        
+        if body.itemReferenciaID is not None:
+            item = self.itens_logic.get_item_by_id(item_id=body.itemReferenciaID)
+            solicitacao_item.itemReferenciaID = item.id
+        
+        if body.categoriaReferenciaID is not None:
+            categoria = self.categorias_logic.get_categoria_by_id(categoria_id=body.categoriaReferenciaID)
+            solicitacao_item.categoriaReferenciaID = categoria.id
 
-        solicitacao_item.projecaoQuantidade = body.projecaoQuantidade if body.projecaoQuantidade else solicitacao_item.projecaoQuantidade
+        if body.subcategoriaReferenciaID is not None:
+            subcategoria = self.subcategorias_logic.get_sub_categoria_by_id(subcategoria_id=body.subcategoriaReferenciaID)
+            solicitacao_item.subcategoriaReferenciaID = subcategoria.id
+        
+        if body.unidadeReferenciaID is not None:
+            unidade = self.unidades_logic.get_unidade_by_id(unidade_id=body.unidadeReferenciaID)
+            solicitacao_item.unidadeReferenciaID = unidade.id
+        
+        if body.marcaReferenciaID is not None:
+            marca = self.itens_marcas_logic.get_marca_by_id(marca_id=body.marcaReferenciaID)
+            solicitacao_item.marcaReferenciaID = marca.id
 
         self.db.add(solicitacao_item)
         self.db.commit()
         self.db.refresh(solicitacao_item)
 
         return solicitacao_item
-    
 
     def get_solicitacao_itens(self, solicitacao_id: int) -> List[models.SolicitacoesItensModel] | HTTPException:
 
@@ -323,7 +344,7 @@ class SolicitacaoItensLogic:
         ).all()
 
         if itens == []:
-            raise HTTPException(status_code=204, detail=f"A solicitação {solicitacao_id} não tem itens cadastrados")
+            raise NoContentException()
         
         return itens
     

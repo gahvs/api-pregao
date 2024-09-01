@@ -12,7 +12,9 @@
 - Adicioanr Rotas para Alteração e Deleção nas entidades Unidades, SubCategorias, Categorias, Marcas e Itens - ``DONE``
 
 ### Maior Flexibilidade na Criação de Solicitações de Pregão:
-- Remover restrição de existência de Item na criação da solicitação
+- Remover restrição de existência de Item na criação da solicitação - ``DONE``
+- Atualizar TabelaPG, model e schemas dos Itens de Solicitacao - ``DONE``
+- Criar operacoes de Itens - adicionar e remover (pensar no alterar)
 
 ### Maior Flexibilidade na conversão de Solicitações em Pregões:
 - Adicionar funcionalidade de extensão de Pregão a partir de Solicitação

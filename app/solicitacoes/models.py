@@ -22,13 +22,22 @@ class SolicitacoesItensModel(Base):
 
     id = Column(BigInteger, primary_key=True, index=True)
     solicitacaoID = Column(BigInteger)
-    itemID = Column(BigInteger)
     criadoPor = Column(BigInteger)
-    unidadeID = Column(BigInteger)
     projecaoQuantidade = Column(Double)
     criadoEm = Column(DateTime, default=func.now())
     atualizadoEm = Column(DateTime, default=func.now(), onupdate=func.now())
     deleted = Column(Boolean, default=False)
+    itemNome = Column(String)
+    itemDescricao = Column(String)
+    itemCategoria = Column(String)
+    itemSubcategoria = Column(String)
+    itemUnidade = Column(String)
+    itemMarca = Column(String)
+    categoriaReferenciaID = Column(BigInteger)
+    subcategoriaReferenciaID = Column(BigInteger)
+    unidadeReferenciaID = Column(BigInteger)
+    marcaReferenciaID = Column(BigInteger)
+    itemReferenciaID = Column(BigInteger)
 
 
 class SolicitacoesParticipantesModel(Base):

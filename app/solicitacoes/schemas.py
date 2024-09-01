@@ -39,37 +39,58 @@ class SolicitacoesResponseSchema(BaseModel):
         orm_mode = True
         from_attributes = True
 
-class SolicitacoesItensBodySchema(BaseModel):
-
-    itemID: int
-    unidadeID: int
-    projecaoQuantidade: float
-    participanteID: int
-        
-    class Config:
-        orm_mode = True
-        from_attributes = True
-
-class SolicitacoesItensBodyUpdateSchema(BaseModel):
-
-    projecaoQuantidade: Optional[float] = None
-        
-    class Config:
-        orm_mode = True
-        from_attributes = True        
-
 class SolicitacoesItensResponseSchema(BaseModel):
 
     id: int
-    solicitacaoID: int
     criadoPor: int
-    itemID: int
-    unidadeID: int
     projecaoQuantidade: float
     criadoEm: datetime
     atualizadoEm: datetime
     deleted: bool
+    itemNome: str
+    itemDescricao: str
+    itemCategoria: str
+    itemSubcategoria: str
+    itemUnidade: str
+    itemMarca: str
+    categoriaReferenciaID: Optional[int] = Field(default=None)
+    subcategoriaReferenciaID: Optional[int] = Field(default=None)
+    unidadeReferenciaID: Optional[int] = Field(default=None)
+    marcaReferenciaID: Optional[int] = Field(default=None)
+    itemReferenciaID: Optional[int] = Field(default=None)
+    
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
+class SolicitacoesItensBodySchema(BaseModel):
+
+    participanteID: int
+    projecaoQuantidade: float
+    itemNome: str
+    itemDescricao: str
+    itemCategoria: str
+    itemSubcategoria: str
+    itemUnidade: str
+    itemMarca: str
+    categoriaReferenciaID: Optional[int] = Field(default=None)
+    subcategoriaReferenciaID: Optional[int] = Field(default=None)
+    unidadeReferenciaID: Optional[int] = Field(default=None)
+    marcaReferenciaID: Optional[int] = Field(default=None)
+    itemReferenciaID: Optional[int] = Field(default=None)
+    
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+class SolicitacoesItensReferenciasSchema(BaseModel):
+    
+    categoriaReferenciaID: Optional[int] = Field(default=None)
+    subcategoriaReferenciaID: Optional[int] = Field(default=None)
+    unidadeReferenciaID: Optional[int] = Field(default=None)
+    marcaReferenciaID: Optional[int] = Field(default=None)
+    itemReferenciaID: Optional[int] = Field(default=None)
+    
     class Config:
         orm_mode = True
         from_attributes = True
