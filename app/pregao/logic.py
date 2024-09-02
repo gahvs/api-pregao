@@ -693,6 +693,11 @@ class PregaoConversoesLogic:
             if new_item.itemID in pregao_itens_dict:                
                 # get current pregao item and setting False in demandaAtual
                 current_item = pregao_itens_dict[new_item.itemID]
+
+                # raising error if unidade are differents
+                if new_item.unidadeID != current_item.unidadeID:
+                    raise ResourceExpectationFailedException()
+
                 current_item.demandaAtual = False
                 self.db.add(current_item)
 
