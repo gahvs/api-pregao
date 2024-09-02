@@ -75,6 +75,7 @@ class PregaoRegrasLancesLogic:
         
         return regras
 
+
 class PregaoLogic:
     '''
         Realiza ações que tem como contexto a tabela PREGAO
@@ -368,8 +369,11 @@ class PregaoItensLogic:
         if old_pregao_item.deleted:
             raise ResourceExpectationFailedException()
 
-        if body.projecaoQuantidade is None:
+        if body.projecaoQuantidade is None and body.unidadeID is None:
             raise ResourceExpectationFailedException()
+
+        if body.unidadeID is not None:
+            unidade = self.unidades_logic.get_unidade_by_id(unidade_id=body.unidadeID)
 
         # setting false to demandaAtual in old instance
         old_pregao_item.demandaAtual = False
@@ -387,8 +391,9 @@ class PregaoItensLogic:
         old_pregao_attrs_dict = {key: value for key, value in old_pregao_item.__dict__.items() if not key.startswith('_')}
         new_pregao_item = models.PregaoItensModel(**old_pregao_attrs_dict)        
 
-        # update projecaoQuantidade in new instance
-        new_pregao_item.projecaoQuantidade = body.projecaoQuantidade
+        # update attrs in new instance
+        new_pregao_item.projecaoQuantidade = body.projecaoQuantidade if body.projecaoQuantidade else new_pregao_item.projecaoQuantidade
+        new_pregao_item.unidadeID = unidade.id if unidade else new_pregao_item.unidadeID
 
         # update demandaAtual in new instance
         new_pregao_item.demandaAtual = True

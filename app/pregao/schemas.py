@@ -56,7 +56,7 @@ class PregaoExtendBodySchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True  
-          
+
 
 class PregaoParticipanteBodySchema(BaseModel):
             
@@ -92,6 +92,7 @@ class PregaoItensBodySchema(BaseModel):
 
 class PregaoItensBodyUpdateSchema(BaseModel):
 
+    unidadeID: Optional[int] = None
     projecaoQuantidade: Optional[float] = None
         
     class Config:
