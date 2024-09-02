@@ -19,6 +19,7 @@
 ### Maior Flexibilidade na conversão de Solicitações em Pregões:
 - Recriar funcionalidade de conversão de Solicitação em Pregao - ``DONE``
 - Adicionar funcionalidade de extensão de Pregão a partir de Solicitação - ``DONE``
+- Testar funcionalidade de extensão de Pregão a partir de Solicitação com mais de uma solicitacao (foi testado apenas com uma)
 
 ### Ajuste dos Status do Pregão
 - Implementar novos status de Pregão
