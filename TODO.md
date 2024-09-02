@@ -22,6 +22,9 @@
 - Testar funcionalidade de extensão de Pregão a partir de Solicitação com mais de uma solicitacao (foi testado apenas com uma)
 - Testar se funcionalidade de extensão de Pregão gera erro em condicao de unidades divergentes
 
+### Ajuste/Validação em Itens de Pregao
+- Testar comportamento ao se alterar unidade do item de pregão
+
 ### Ajuste dos Status do Pregão
 - Implementar novos status de Pregão
 - Implementar as restrições de operação de acordo com os Status
