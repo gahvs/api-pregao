@@ -17,8 +17,8 @@
 - Criar operacoes de Itens - adicionar e remover (pensar no alterar) - ``DONE``
 
 ### Maior Flexibilidade na conversão de Solicitações em Pregões:
-- Recriar funcionalidade de conversão de Solicitação em Pregao
-- Adicionar funcionalidade de extensão de Pregão a partir de Solicitação
+- Recriar funcionalidade de conversão de Solicitação em Pregao - ``DONE``
+- Adicionar funcionalidade de extensão de Pregão a partir de Solicitação - ``DONE``
 
 ### Ajuste dos Status do Pregão
 - Implementar novos status de Pregão
@@ -26,6 +26,6 @@
 
 ### Melhoria da Negociação do Pregão
 - Permitir alterações de Demanda durante execução do Pregão
-- Adicionar aos Itens do Pregão flag de demanda atual para historico de alteração de demandas
+- Adicionar aos Itens do Pregão flag de demanda atual para historico de alteração de demandas  - ``DONE``
 
 ---

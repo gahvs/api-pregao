@@ -33,6 +33,7 @@ class PregaoItensModel(Base):
     criadoEm = Column(DateTime, default=func.now())
     atualizadoEm = Column(DateTime, default=func.now(), onupdate=func.now())
     deleted = Column(Boolean, default=False)
+    demandaAtual = Column(Boolean, default=True)
 
 
 class PregaoParticipantesModel(Base):

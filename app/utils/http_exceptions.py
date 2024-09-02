@@ -27,7 +27,7 @@ class ResourceConflictException(HTTPException):
         super().__init__(status_code, detail, headers)  
 
 
-class ResourceExpectationFailedException:
+class ResourceExpectationFailedException(HTTPException):
         
     DEFAULT_MESSAGE = "Operação Inválida"
 

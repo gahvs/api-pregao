@@ -11,10 +11,11 @@ from datetime import datetime, timedelta
 from usuarios.logic import UserLogic
 from usuarios.models import UserModel
 from solicitacoes.logic import SolicitacaoLogic, SolicitacaoItensLogic, SolicitacaoParticipantesLogic
-from solicitacoes.models import SolicitacoesItensModel, SolicitacoesParticipantesModel
+from solicitacoes.models import SolicitacoesModel, SolicitacoesItensModel, SolicitacoesParticipantesModel
 from itens.logic import ItensLogic, ItensUnidadesLogic
 from . import models
 from . import schemas
+import copy
 
 
 class PregaoRegrasLancesLogic:
@@ -312,6 +313,16 @@ class PregaoItensLogic:
         
         return pregao_item
     
+    def get_item_demanda_atual(self, pregao_id: int, item_id: int) -> models.PregaoItensModel | None:
+
+        item_demanda_atual: models.PregaoItensModel = self.db.query(models.PregaoItensModel).filter(
+            models.PregaoItensModel.pregaoID==pregao_id,
+            models.PregaoItensModel.itemID==item_id,
+            models.PregaoItensModel.demandaAtual==True
+        ).first()
+
+        return item_demanda_atual
+
     def pregao_item_already_setted(self, pregao_id: int, item_id: int) -> bool:
 
         pregao_item = self.db.query(models.PregaoItensModel).filter(
@@ -350,17 +361,45 @@ class PregaoItensLogic:
     
     def update_pregao_item(self, pregao_item_id: int, body: schemas.PregaoItensBodyUpdateSchema) -> models.PregaoItensModel | HTTPException:
 
-        pregao_item = self.get_pregao_item_by_id(pregao_item_id=pregao_item_id)
-        if pregao_item.deleted:
+        old_pregao_item = self.get_pregao_item_by_id(pregao_item_id=pregao_item_id)
+        if not old_pregao_item.demandaAtual:
             raise ResourceExpectationFailedException()
         
-        pregao_item.projecaoQuantidade = body.projecaoQuantidade if body.projecaoQuantidade else pregao_item.projecaoQuantidade
+        if old_pregao_item.deleted:
+            raise ResourceExpectationFailedException()
 
-        self.db.add(pregao_item)
+        if body.projecaoQuantidade is None:
+            raise ResourceExpectationFailedException()
+
+        # setting false to demandaAtual in old instance
+        old_pregao_item.demandaAtual = False
+
+        # save old instance
+        self.db.add(old_pregao_item)
         self.db.commit()
-        self.db.refresh(pregao_item)
+        self.db.refresh(old_pregao_item)
 
-        return pregao_item
+        # Detach the old instance from the session and remove id from instance to avoid conflicts
+        # self.db.expunge(old_pregao_item)
+        del old_pregao_item.__dict__['id']
+
+        # Create a shallow copy of the old instance
+        old_pregao_attrs_dict = {key: value for key, value in old_pregao_item.__dict__.items() if not key.startswith('_')}
+        new_pregao_item = models.PregaoItensModel(**old_pregao_attrs_dict)        
+
+        # update projecaoQuantidade in new instance
+        new_pregao_item.projecaoQuantidade = body.projecaoQuantidade
+
+        # update demandaAtual in new instance
+        new_pregao_item.demandaAtual = True
+        
+        # save new instance
+        self.db.add(new_pregao_item)
+        self.db.commit()
+        self.db.refresh(new_pregao_item)        
+
+        # return new instance
+        return new_pregao_item
     
     def get_pregao_itens(self, pregao_id: int) -> List[models.PregaoItensModel] | HTTPException:
 
@@ -368,7 +407,8 @@ class PregaoItensLogic:
 
         itens: List[models.PregaoItensModel] = self.db.query(models.PregaoItensModel).filter(
             models.PregaoItensModel.pregaoID==pregao.id,
-            models.PregaoItensModel.deleted==False
+            models.PregaoItensModel.deleted==False,
+            models.PregaoItensModel.demandaAtual==True
         ).all()
 
         if itens == []:
@@ -530,6 +570,7 @@ class PregaoConversoesLogic:
                 db: Session = Depends(get_db),
                 user_logic: UserLogic = Depends(UserLogic),
                 pregao_logic: PregaoLogic = Depends(PregaoLogic),
+                pregao_itens_logic: PregaoItensLogic = Depends(PregaoItensLogic),
                 pregao_participantes_logic: PregaoParticipantesLogic = Depends(PregaoParticipantesLogic),
                 solicitacao_logic: SolicitacaoLogic = Depends(SolicitacaoLogic),
                 solicitacao_participantes_logic: SolicitacaoParticipantesLogic = Depends(SolicitacaoParticipantesLogic),
@@ -539,6 +580,7 @@ class PregaoConversoesLogic:
         self.db: Session = db
         self.user_logic: UserLogic = user_logic
         self.pregao_logic: PregaoLogic = pregao_logic
+        self.pregao_itens_logic: PregaoItensLogic = pregao_itens_logic
         self.pregao_participantes_logic: PregaoParticipantesLogic = pregao_participantes_logic
         self.solicitacao_logic: SolicitacaoLogic = solicitacao_logic
         self.solicitacao_participantes_logic: SolicitacaoParticipantesLogic = solicitacao_participantes_logic
@@ -555,12 +597,13 @@ class PregaoConversoesLogic:
             self.db.add(new_conversao)
             self.db.commit()
 
-    def criar_pregao_por_conversao(self, body: schemas.PregaoCreateSchema) -> models.PregaoModel | HTTPException:
+
+    def create_pregao_using_solicitacoes(self, body: schemas.PregaoCreateSchema) -> models.PregaoModel | HTTPException:
 
         if body.solicitacoes == []:
             raise ResourceExpectationFailedException()
         
-        solicitacoes = list(map(lambda solicitacao_id: self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id), body.solicitacoes))
+        solicitacoes:list[SolicitacoesModel] = list(map(lambda solicitacao_id: self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id), body.solicitacoes))
         for solicitacao in solicitacoes:
             if solicitacao.status == self.solicitacao_logic.STATUS_CONVERTIDO:
                 raise ResourceExpectationFailedException()
@@ -568,8 +611,8 @@ class PregaoConversoesLogic:
         solicitacoes_itens = list(map(lambda solicitacao: self.solicitacao_itens_logic.get_solicitacao_itens(solicitacao_id=solicitacao.id), solicitacoes))
         solicitacoes_participantes = list(map(lambda solicitacao: self.solicitacao_participantes_logic.get_solicitacao_participantes(solicitacao_id=solicitacao.id), solicitacoes))
 
-        pregao_itens = self.unifiy_solicitacao_itens_in_pregao_itens(solicitacao_itens=solicitacoes_itens)
-        pregao_participantes = self.unify_solicitacao_participantes_in_pregao_participantes(solicitacao_participantes=solicitacoes_participantes)
+        pregao_itens: List[models.PregaoItensModel] = self.unifiy_solicitacao_itens_in_pregao_itens(solicitacao_itens=solicitacoes_itens)
+        pregao_participantes: List[models.PregaoParticipantesModel] = self.unify_solicitacao_participantes_in_pregao_participantes(solicitacao_participantes=solicitacoes_participantes)
 
         usuario = self.user_logic.get_user_by_id(user_id=body.usuarioID)
 
@@ -577,6 +620,7 @@ class PregaoConversoesLogic:
             descricao=body.descricao,
             informacoes=body.informacoes,
             criadoPor=usuario.id,
+            regraLanceID=body.regraLanceID,
             dataHoraInicio=body.dataHoraInicio,
             dataHoraFim=body.dataHoraFim,
             abertoADemandasEm=body.abertoADemandasEm,
@@ -593,7 +637,6 @@ class PregaoConversoesLogic:
         # Salvando Itens do Pregao importados das Solicitacoes
         for pregao_item in pregao_itens:
             pregao_item.pregaoID = new_pregao.id
-            pregao_item.criadoPor = criador_participante.id
             self.db.add(pregao_item)
             self.db.commit()
 
@@ -616,17 +659,90 @@ class PregaoConversoesLogic:
         return new_pregao
 
 
-    def unifiy_solicitacao_itens_in_pregao_itens(self, solicitacao_itens: List[SolicitacoesItensModel]) -> List[models.PregaoItensModel] | HTTPException:
+    def extend_pregao_using_solicitacoes(self, pregao_id: int, body: schemas.PregaoExtendBodySchema) -> models.PregaoModel | HTTPException:
+        
+        solicitacoes = body.solicitacoes
+
+        if solicitacoes == []:
+            raise ResourceExpectationFailedException()
+        
+        solicitacoes: list[SolicitacoesModel] = list(map(lambda solicitacao_id: self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id), solicitacoes))
+        for solicitacao in solicitacoes:
+            if solicitacao.status == self.solicitacao_logic.STATUS_CONVERTIDO:
+                raise ResourceExpectationFailedException()
+
+        solicitacoes_itens = list(map(lambda solicitacao: self.solicitacao_itens_logic.get_solicitacao_itens(solicitacao_id=solicitacao.id), solicitacoes))
+        solicitacoes_participantes = list(map(lambda solicitacao: self.solicitacao_participantes_logic.get_solicitacao_participantes(solicitacao_id=solicitacao.id), solicitacoes))
+
+        new_pregao_itens: List[models.PregaoItensModel] = self.unifiy_solicitacao_itens_in_pregao_itens(solicitacao_itens=solicitacoes_itens)
+        new_pregao_participantes: List[models.PregaoParticipantesModel] = self.unify_solicitacao_participantes_in_pregao_participantes(solicitacao_participantes=solicitacoes_participantes)
+        
+        pregao: models.PregaoModel = self.pregao_logic.get_pregao_by_id(pregao_id=pregao_id)            
+
+        pregao_itens: List[models.PregaoItensModel] = self.pregao_itens_logic.get_pregao_itens(pregao_id=pregao.id)
+        pregao_participantes: List[models.PregaoParticipantesModel] = self.pregao_participantes_logic.get_pregao_participantes(pregao_id=pregao.id)
+        
+        pregao_itens_dict = {item.itemID: item for item in pregao_itens}
+        pregao_participantes_dict = {participante.usuarioID: participante for participante in pregao_participantes}
+
+        # unifying pregao itens
+        for new_item in new_pregao_itens:
+            # add pregao reference
+            new_item.pregaoID = pregao.id
+
+            if new_item.itemID in pregao_itens_dict:                
+                # get current pregao item and setting False in demandaAtual
+                current_item = pregao_itens_dict[new_item.itemID]
+                current_item.demandaAtual = False
+                self.db.add(current_item)
+
+                # updating quantidade in new item
+                new_item.projecaoQuantidade += current_item.projecaoQuantidade            
+                
+            # save changes
+            new_item.demandaAtual = True
+            self.db.add(new_item)
+
+        # unifying pregao itens 
+        for new_participante in new_pregao_participantes:
+            # add pregao reference
+            new_participante.pregaoID = pregao.id
+
+            # if user exists as participante
+            if new_participante.usuarioID in pregao_participantes_dict:        
+                pregao_participante = pregao_participantes_dict[new_participante.usuarioID]
+                
+                # raising error if the roles are differents
+                if new_participante.participanteTipo != pregao_participante.participanteTipo:
+                    raise ResourceExpectationFailedException()
+            
+            # if not, create
+            else:
+                self.db.add(new_participante)                                                    
+
+        # commiting all changes
+        self.db.commit()
+        
+        return pregao
+
+    def unifiy_solicitacao_itens_in_pregao_itens(self, solicitacao_itens: List[List[SolicitacoesItensModel]]) -> List[models.PregaoItensModel] | HTTPException:
+        # solicitacao_itens: lista com a lista de itens por solicitacao
+        
+        # Verifying if references are not null
+        for solicitacao in solicitacao_itens:
+            for item in solicitacao:
+                if item.unidadeReferenciaID is None or item.itemReferenciaID is None:
+                    raise ResourceExpectationFailedException()
 
         # Unpacking Itens and group by Item id    
 
         itens_group = defaultdict(list)
-        all_solicitacoes_itens = list(chain(*solicitacao_itens))
+        all_solicitacoes_itens: List[SolicitacoesItensModel] = list(chain(*solicitacao_itens))
         
         for item in all_solicitacoes_itens:
-             itens_group[item.itemID].append(item)        
+             itens_group[item.itemReferenciaID].append(item)        
 
-        itens_matrix = list(itens_group.values())
+        itens_matrix: List[List[SolicitacoesItensModel]] = list(itens_group.values())
 
         # Unify Itens in PregaoItens after Check 'Unidade' consistency
 
@@ -634,16 +750,17 @@ class PregaoConversoesLogic:
 
         for itens_group in itens_matrix:
             
-            unidades = {item.unidadeID for item in itens_group}
+            unidades = {item.unidadeReferenciaID for item in itens_group}
             if len(unidades) > 1:
                 raise ResourceExpectationFailedException()
             
-            item_sample = itens_group[0]
+            item_sample: SolicitacoesItensModel = itens_group[0]
 
             pregao_itens.append(models.PregaoItensModel(
-                itemID=item_sample.itemID,
+                itemID=item_sample.itemReferenciaID,
                 projecaoQuantidade=sum(item.projecaoQuantidade for item in itens_group),
-                unidadeID=item_sample.unidadeID
+                unidadeID=item_sample.unidadeReferenciaID,
+                criadoPor=item_sample.criadoPor
             ))
 
         return pregao_itens
@@ -652,12 +769,12 @@ class PregaoConversoesLogic:
 
         # Unpacking Participantes and group by Usuario ID
         participantes_group = defaultdict(list)
-        all_participantes = list(chain(*solicitacao_participantes))
+        all_participantes: List[SolicitacoesParticipantesModel] = list(chain(*solicitacao_participantes))
 
         for participante in all_participantes:
             participantes_group[participante.usuarioID].append(participante)
 
-        participantes_matrix = list(participantes_group.values())
+        participantes_matrix: List[List[SolicitacoesParticipantesModel]] = list(participantes_group.values())
 
         # Unify Participantes in PregaoParticipantesModel after Check 'participanteTipo' consistency
 

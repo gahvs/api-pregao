@@ -15,7 +15,6 @@ class SolicitacaoLogic:
     '''
     
     STATUS_EM_ANALISE = "PENDENTE"
-    STATUS_APROVADO = "APROVADA"
     STATUS_REJEITADO = "REJEITADA"
     STATUS_CONVERTIDO = "CONVERTIDA"
     
@@ -40,7 +39,12 @@ class SolicitacaoLogic:
             raise HTTPException(status_code=404, detail=f"Não foi encontrada Solicitação de Pregão com ID: {solicitacao_id}")
         
         return solicitacao
-    
+
+    def solicitacao_is_able_to_modify(self, solicitacao_id: int) -> bool | HTTPException:
+
+        solicitacao: models.SolicitacoesModel = self.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
+
+        return solicitacao.status == self.STATUS_EM_ANALISE
     
     def create_solicitacao(self, body: schemas.SolicitacoesBodySchema) -> models.SolicitacoesModel | HTTPException:
     
@@ -165,6 +169,9 @@ class SolicitacaoParticipantesLogic:
     
     def create_solicitacao_participante(self, solicitacao_id: int, usuario_id: int, participante_tipo: str) -> models.SolicitacoesParticipantesModel | HTTPException:
 
+        if not self.solicitacao_logic.solicitacao_is_able_to_modify(solicitacao_id=solicitacao_id):
+            raise ResourceExpectationFailedException()
+
         if self.participante_already_setted(solicitacao_id=solicitacao_id, usuario_id=usuario_id):
 
             participante = self.get_participante_using_solicitacao_usuario(solicitacao_id=solicitacao_id, usuario_id=usuario_id)
@@ -255,6 +262,9 @@ class SolicitacaoItensLogic:
     
 
     def create_solicitacao_item(self, solicitacao_id: int, body: schemas.SolicitacoesItensBodySchema) -> models.SolicitacoesItensModel | HTTPException:    
+
+        if not self.solicitacao_logic.solicitacao_is_able_to_modify(solicitacao_id=solicitacao_id):
+            raise ResourceExpectationFailedException()
 
         solicitacao = self.solicitacao_logic.get_solicitacao_by_id(solicitacao_id=solicitacao_id)
         participante = self.participante_logic.get_solicitacao_participante_by_id(solicitacao_participante_id=body.participanteID)

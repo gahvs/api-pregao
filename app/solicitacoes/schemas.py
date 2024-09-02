@@ -42,6 +42,7 @@ class SolicitacoesResponseSchema(BaseModel):
 class SolicitacoesItensResponseSchema(BaseModel):
 
     id: int
+    solicitacaoID: int
     criadoPor: int
     projecaoQuantidade: float
     criadoEm: datetime

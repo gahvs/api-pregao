@@ -49,6 +49,14 @@ class PregaoCreateSchema(BaseModel):
         else:
             raise ValueError("DATETIME FORMAT INCORRECT")
 
+class PregaoExtendBodySchema(BaseModel):
+
+    solicitacoes: List[int]
+    
+    class Config:
+        orm_mode = True
+        from_attributes = True  
+          
 
 class PregaoParticipanteBodySchema(BaseModel):
             
@@ -57,7 +65,8 @@ class PregaoParticipanteBodySchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
-        
+
+
 class PregaoParticipanteResponseSchema(BaseModel):
             
     id: int
@@ -68,6 +77,7 @@ class PregaoParticipanteResponseSchema(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
 
 class PregaoItensBodySchema(BaseModel):
 
@@ -99,6 +109,7 @@ class PregaoItensResponseSchema(BaseModel):
     criadoEm: datetime
     atualizadoEm: datetime
     deleted: bool
+    demandaAtual: bool
 
     class Config:
         orm_mode = True

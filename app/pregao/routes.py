@@ -22,7 +22,12 @@ def create_pregao(body: schemas.PregaoCreateSchema, logic: logic.PregaoLogic = D
 
 @router.post("/converter", response_model=schemas.PregaoSchema)
 def create_pregao_por_conversao(body: schemas.PregaoCreateSchema, logic: logic.PregaoConversoesLogic = Depends()):
-    pregao = logic.criar_pregao_por_conversao(body=body)
+    pregao = logic.create_pregao_using_solicitacoes(body=body)
+    return schemas.PregaoSchema.model_validate(pregao)
+
+@router.post("/{pregao_id}/estender", response_model=schemas.PregaoSchema)
+def extend_pregao_with_solicitacao(pregao_id: int, body: schemas.PregaoExtendBodySchema, logic: logic.PregaoConversoesLogic = Depends()):
+    pregao = logic.extend_pregao_using_solicitacoes(pregao_id=pregao_id, body=body)
     return schemas.PregaoSchema.model_validate(pregao)
 
 @router.patch("/{pregao_id}/cancelar", response_model=schemas.PregaoSchema)
