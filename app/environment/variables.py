@@ -1,22 +1,31 @@
 import os
 from dotenv import load_dotenv
-
-PRODUCTION = "prod"
-
-load_dotenv()
-
-ENVIRONMENT = os.getenv("ENV")
+from urllib.parse import quote_plus
 
 def get_db_url():
-    
-    if ENVIRONMENT == "prod":
-        return os.getenv("POSTGRES_PROD_URL")
-    
-    return os.getenv("POSTGRES_DEV_URL")
 
-def get_db_schema():
-    
-    if ENVIRONMENT == "prod":
-        return os.getenv("POSTGRES_PROD_SCHEMA")
-    
-    return os.getenv("POSTGRES_DEV_SCHEMA")
+    if load_dotenv():
+        # Getting Credentials
+        host = os.getenv("POSTGRES_HOST")
+        port = os.getenv("POSTGRES_PORT")
+        password = os.getenv("POSTGRES_PASS")
+        user = os.getenv("POSTGRES_USER")
+        database = os.getenv("POSTGRES_DATABASE")
+
+        # Coding the password to URL-Safe
+        password = quote_plus(password)
+
+        # Build Postgres URL Connection
+        url_connection = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+        return url_connection
+
+    return ""
+
+def get_db_schema() -> str:
+
+    if load_dotenv():
+        schema = os.getenv("POSTGRES_SCHEMA")
+        return schema
+
+    return ""
