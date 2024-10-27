@@ -13,6 +13,9 @@ run:
 		-e POSTGRES_SCHEMA=$(POSTGRES_SCHEMA) \
 		$(IMAGE_NAME)
 
+run-env:
+	docker run -p 8000:8000 $(IMAGE_NAME)
+
 stop:
 	docker stop $$(docker ps -q --filter ancestor=$(IMAGE_NAME))
 	docker rm $$(docker ps -a -q --filter ancestor=$(IMAGE_NAME))
